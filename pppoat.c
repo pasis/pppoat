@@ -75,6 +75,8 @@ int main(int argc, char **argv)
 		if (dup2(pd_wr[0], 0) < 0)
 			err_exit("dup2");
 		close(pd_rd[0]);
+		close(pd_rd[1]);
+		close(pd_wr[0]);
 		close(pd_wr[1]);
 		execl(pppd, pppd, "nodetach", "noauth", "notty", NULL);
 		err_exit("execl");
