@@ -1,3 +1,8 @@
 PPPoAT - PPP over Any Transport
 
 Inspired by pppoj (PPP over Jabber)
+
+Currently you can test in the following way: run two instances of pppoat with root privileges, for example
+	sudo ./pppoat 10.0.0.1:
+	sudo ./pppoat 10.0.0.2:
+This will create two interfaces pppX with appropriate ip addresses. Output traffic for the fisrt one is input for the second and vise versa.

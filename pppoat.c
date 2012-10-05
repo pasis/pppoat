@@ -5,7 +5,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+/* modules */
 #include "sample.h"
+#include "loopback.h"
 
 #define err_exit(str)	{		\
 			  perror(str);	\
@@ -24,6 +26,7 @@ struct module
 struct module mod_tbl[] = 
 {
 	{"sample", &mod_sample},
+	{"loop", &mod_loop},
 	{"", NULL},
 };
 
@@ -49,6 +52,15 @@ int main(int argc, char **argv)
 	prog_name = argv[0];
 
 	/* TODO: deal with arguments here */
+	if (argc < 2) { /* arguments ain't implemented yet... just write some words */
+		printf("pppoat dev version\n"
+		       "currently supports only loopback module\n"
+		       "\n"
+		       "usage: %s {local_ip}\n"
+		       "local_ip\t':' must follows the ip address; for testing purpose\n",
+		       argv[0]);
+		return 2;
+	}
 
 	/* redirect logs to a file */
 	fd = open(log_name, O_WRONLY | O_CREAT | O_APPEND, 0664);
@@ -78,7 +90,7 @@ int main(int argc, char **argv)
 		close(pd_rd[1]);
 		close(pd_wr[0]);
 		close(pd_wr[1]);
-		execl(pppd, pppd, "nodetach", "noauth", "notty", NULL);
+		execl(pppd, pppd, "nodetach", "noauth", "notty", "passive", argv[1], NULL);
 		err_exit("execl");
 	}
 
@@ -86,6 +98,5 @@ int main(int argc, char **argv)
 	close(pd_wr[0]);
 
 	/* TODO: run appropriate module's function here */
-
-	return 0;
+	return mod_loop(argc, argv, pd_rd[0], pd_wr[1]);
 }
