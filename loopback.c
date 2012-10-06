@@ -22,9 +22,6 @@ static void *mod_loop_run(void *arg)
 	size_t c;
 	char buf[LOOP_BUFSIZ];
 
-	/* debug */
-	err_log("thread's started\n");
-
 	while (1) {
 		c = read(fd->rd, buf, LOOP_BUFSIZ);
 		if (c > 0) {
