@@ -14,8 +14,13 @@
 			  exit(errno);	\
 			}
 
+#define PPPOAT_DESCR	"PPPoAT"
+#define PPPOAT_VERSION	"dev"
+
 #define STD_LOG_NAME	"/var/log/pppoat.log"
 #define STD_PPPD_PATH	"/usr/sbin/pppd"
+
+#define ARG_MODULE	1
 
 struct module
 {
@@ -40,6 +45,40 @@ void err_log()
 	fprintf(stderr, "%s: logging will continue to stderr.\n", prog_name);
 }
 
+static void help(char *name)
+{
+	printf(PPPOAT_DESCR " version " PPPOAT_VERSION "\n"
+	"Usage: %s [options] [<local_ip>:<remote_ip>] [-- [pppd options]]\n"
+	"\n"
+	"Options:\n"
+	" -h, --help\tprint this text and exit\n"
+	" -l, --list\tprint list of available modules and exit\n"
+	" -m <module>\tchoose module\n"
+	" -q, --quiet\tdon't print anything to stdout\n", name);
+	exit(0);
+}
+
+static void list_mod()
+{
+	int i = 0;
+	while (mod_tbl[i].func) {
+		printf("%s\n", mod_tbl[i].name);
+		i++;
+	}
+	exit(0);
+}
+
+static int is_mod(char *name)
+{
+	int i = 0;
+	while (mod_tbl[i].func) {
+		if (!strcmp(name, mod_tbl[i].name))
+			return i;
+		i++;
+	}
+	return -1;
+}
+
 int main(int argc, char **argv)
 {
 	/* pipe descriptors */
@@ -48,17 +87,70 @@ int main(int argc, char **argv)
 	int fd;
 	pid_t pid;
 	char pppd[] = STD_PPPD_PATH;
+	char *ip = NULL;
+	char *mod_name = NULL;
+	int mod_idx;
+	int i;
+	int need_arg = 0;
 
 	prog_name = argv[0];
 
-	/* TODO: deal with arguments here */
-	if (argc < 2) { /* arguments ain't implemented yet... just write some words */
-		printf("pppoat dev version\n"
-		       "currently supports only loopback module\n"
-		       "\n"
-		       "usage: %s {local_ip}\n"
-		       "local_ip\t':' must follows the ip address; for testing purpose\n",
-		       argv[0]);
+	/* parsing arguments */
+	if (argc < 2)
+		help(argv[0]);
+	for (i = 1; i < argc; i++) {
+		if (need_arg) {
+			switch (need_arg) {
+			case ARG_MODULE:
+				mod_name = argv[i];
+				break;
+			default:
+				fprintf(stderr, "there is internal problem with parsing arguments\n");
+				return 1;
+			}
+			need_arg = 0;
+			continue;
+		}
+		if (argv[i][0] != '-') {
+			/* <local_ip>:<remote_ip> */
+			ip = argv[i];
+			continue;
+		}
+		if (!strcmp("-h", argv[i]) || !strcmp("--help", argv[i]))
+			/* print help and exit */
+			help(argv[0]);
+		if (!strcmp("-l", argv[i]) || !strcmp("--list", argv[i]))
+			/* print list of available modules and exit */
+			list_mod();
+		if (!strcmp("-m", argv[i])) {
+			/* choose module */
+			need_arg = ARG_MODULE;
+			continue;
+		}
+		if (!strcmp("-q", argv[i]) || !strcmp("--quiet", argv[i])) {
+			/* quiet mode */
+			quiet = 1;
+			continue;
+		}
+		if (!strcmp("--", argv[i])) {
+			/* TODO: set pointer to i+1, the rest options are for pppd */
+			break;
+		}
+		/* unrecognized options may be addressed for the module */
+	}
+	if (need_arg) {
+		fprintf(stderr, "incomplete arguments, see %s --help\n", argv[0]);
+		return 2;
+	}
+	/* check whether required arguments are set */
+	if (!mod_name) {
+		fprintf(stderr, "you must choose a module, see %s --help\n", argv[0]);
+		return 2;
+	}
+
+	/* check whether module name is correct */
+	if ((mod_idx = is_mod(mod_name)) < 0) {
+		fprintf(stderr, "there isn't such a module: %s\n", mod_name);
 		return 2;
 	}
 
@@ -90,13 +182,13 @@ int main(int argc, char **argv)
 		close(pd_rd[1]);
 		close(pd_wr[0]);
 		close(pd_wr[1]);
-		execl(pppd, pppd, "nodetach", "noauth", "notty", "passive", argv[1], NULL);
+		execl(pppd, pppd, "nodetach", "noauth", "notty", "passive", ip, NULL);
 		err_exit("execl");
 	}
 
 	close(pd_rd[1]);
 	close(pd_wr[0]);
 
-	/* TODO: run appropriate module's function here */
-	return mod_loop(argc, argv, pd_rd[0], pd_wr[1]);
+	/* run appropriate module's function */
+	return mod_tbl[mod_idx].func(argc, argv, pd_rd[0], pd_wr[1]);
 }
