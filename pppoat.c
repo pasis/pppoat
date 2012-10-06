@@ -17,10 +17,11 @@
 #define PPPOAT_DESCR	"PPPoAT"
 #define PPPOAT_VERSION	"dev"
 
-#define STD_LOG_NAME	"/var/log/pppoat.log"
+#define STD_LOG_PATH	"/var/log/pppoat.log"
 #define STD_PPPD_PATH	"/usr/sbin/pppd"
 
 #define ARG_MODULE	1
+#define ARG_LOG_PATH	2
 
 struct module
 {
@@ -36,14 +37,7 @@ struct module mod_tbl[] =
 };
 
 int quiet = 0;
-char log_name[] = STD_LOG_NAME;
 char *prog_name;
-
-void err_log()
-{
-	fprintf(stderr, "%s: can't open log file %s\n", prog_name, log_name);
-	fprintf(stderr, "%s: logging will continue to stderr.\n", prog_name);
-}
 
 static void help(char *name)
 {
@@ -53,6 +47,7 @@ static void help(char *name)
 	"Options:\n"
 	" -h, --help\tprint this text and exit\n"
 	" -l, --list\tprint list of available modules and exit\n"
+	" -L <path>\tspecify file for logging\n"
 	" -m <module>\tchoose module\n"
 	" -q, --quiet\tdon't print anything to stdout\n", name);
 	exit(0);
@@ -79,14 +74,34 @@ static int is_mod(char *name)
 	return -1;
 }
 
+static int redirect_logs(char *path)
+{
+	int fd;
+	if (!path)
+		goto out;
+	fd = open(path, O_WRONLY | O_CREAT | O_APPEND, 0664);
+	if (fd < 0 || dup2(fd, 2) < 0)
+		goto out_fd;
+	close(fd);
+
+	return 0;
+
+out_fd:
+	if (fd > 0)
+		close(fd);
+out:
+	fprintf(stderr, "%s: can't open log file %s\n", prog_name, path);
+	fprintf(stderr, "%s: logging will continue to stderr.\n", prog_name);
+	return -1;
+}
+
 int main(int argc, char **argv)
 {
 	/* pipe descriptors */
 	int pd_rd[2], pd_wr[2];
-	/* file descritor for logs */
-	int fd;
 	pid_t pid;
-	char pppd[] = STD_PPPD_PATH;
+	char *pppd = STD_PPPD_PATH;
+	char *log_path = STD_LOG_PATH;
 	char *ip = NULL;
 	char *mod_name = NULL;
 	int mod_idx;
@@ -103,6 +118,9 @@ int main(int argc, char **argv)
 			switch (need_arg) {
 			case ARG_MODULE:
 				mod_name = argv[i];
+				break;
+			case ARG_LOG_PATH:
+				log_path = argv[i];
 				break;
 			default:
 				fprintf(stderr, "there is internal problem with parsing arguments\n");
@@ -122,6 +140,11 @@ int main(int argc, char **argv)
 		if (!strcmp("-l", argv[i]) || !strcmp("--list", argv[i]))
 			/* print list of available modules and exit */
 			list_mod();
+		if (!strcmp("-L", argv[i])) {
+			/* specify file for logging */
+			need_arg = ARG_LOG_PATH;
+			continue;
+		}
 		if (!strcmp("-m", argv[i])) {
 			/* choose module */
 			need_arg = ARG_MODULE;
@@ -148,20 +171,13 @@ int main(int argc, char **argv)
 		return 2;
 	}
 
+	/* redirect logs to a file */
+	redirect_logs(log_path);
+
 	/* check whether module name is correct */
 	if ((mod_idx = is_mod(mod_name)) < 0) {
 		fprintf(stderr, "there isn't such a module: %s\n", mod_name);
 		return 2;
-	}
-
-	/* redirect logs to a file */
-	fd = open(log_name, O_WRONLY | O_CREAT | O_APPEND, 0664);
-	if (fd < 0)
-		err_log();
-	else {
-		if (dup2(fd, 2) < 0)
-			err_log();
-		close(fd);
 	}
 
 	/* create pipes for communication with pppd */
