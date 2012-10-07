@@ -8,9 +8,6 @@
 
 #include "loopback.h"
 
-/* err_log() hasn't been implemented yet */
-#define err_log(str) fprintf(stderr, str)
-
 typedef struct {
 	int rd;
 	int wr;
@@ -19,17 +16,14 @@ typedef struct {
 static void *mod_loop_run(void *arg)
 {
 	arg_t *fd = (arg_t *)arg;
-	size_t c;
-	char buf[LOOP_BUFSIZ];
+	ssize_t c;
 
 	while (1) {
-		c = read(fd->rd, buf, LOOP_BUFSIZ);
-		if (c > 0) {
-			/* TODO: handle EPIPE error */
-			if (write(fd->wr, buf, c) < c)
-				err_log("wrote less that read\n");
-		} else if (c < 0)
-			perror("read");
+		c = splice(fd->rd, NULL, fd->wr, NULL, LOOP_BUFSIZ, 0);
+		if (!c)
+			break;
+		else if (c < 0)
+			perror("splice");
 	}
 
 	return NULL;
