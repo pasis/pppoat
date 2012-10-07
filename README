@@ -10,8 +10,8 @@ Options:
  -q, --quiet	don't print anything to stdout
 
 Available modules:
-sample	do nothing
-loop	create loopback
+sample	does nothing
+loop	creates loopback
 xmpp	PPP over XMPP protocol
 
 Pay attention, pppd need to recognize local ip address for pppX interface.
