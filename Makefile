@@ -23,7 +23,7 @@ $(TARGET): $(OBJ)
 	$(CC) -o $(TARGET) $(OBJ) $(LIBS)
 
 install: $(TARGET)
-	$(INSTALL) $(TARGET) $(DESTDIR)$(bindir)
+	$(INSTALL) -D $(TARGET) $(DESTDIR)$(bindir)/$(TARGET)
 
 deinstall:
 	$(RM) -rf $(DESTDIR)$(bindir)/$(TARGET)
