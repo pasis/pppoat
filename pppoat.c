@@ -35,7 +35,9 @@ struct module mod_tbl[] =
 {
 	{"sample", &mod_sample},
 	{"loop", &mod_loop},
+#ifdef MOD_XMPP
 	{"xmpp", &mod_xmpp},
+#endif
 	{"", NULL},
 };
 
