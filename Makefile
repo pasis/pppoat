@@ -10,8 +10,8 @@ endif
 RM = rm
 INSTALL = install
 
-OBJ = pppoat.o sample.o loopback.o
-HEADERS = sample.h loopback.h
+OBJ = pppoat.o base64.o sample.o loopback.o
+HEADERS = base64.h sample.h loopback.h
 TARGET = pppoat
 
 all: $(TARGET)
