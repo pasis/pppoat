@@ -1,5 +1,6 @@
 PPPOAT_CFLAGS = $(CFLAGS) -O2 -march=native
 LIBS = -lpthread
+LIBS += -lstrophe
 ifndef PREFIX
 PREFIX = /usr
 endif
@@ -10,8 +11,8 @@ endif
 RM = rm
 INSTALL = install
 
-OBJ = pppoat.o base64.o sample.o loopback.o
-HEADERS = base64.h sample.h loopback.h
+OBJ = pppoat.o base64.o sample.o loopback.o xmpp.o
+HEADERS = base64.h sample.h loopback.h xmpp.h
 TARGET = pppoat
 
 all: $(TARGET)

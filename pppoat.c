@@ -4,10 +4,12 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 /* modules */
 #include "sample.h"
 #include "loopback.h"
+#include "xmpp.h"
 
 #define err_exit(str)	{		\
 			  perror(str);	\
@@ -33,6 +35,7 @@ struct module mod_tbl[] =
 {
 	{"sample", &mod_sample},
 	{"loop", &mod_loop},
+	{"xmpp", &mod_xmpp},
 	{"", NULL},
 };
 
@@ -107,6 +110,8 @@ int main(int argc, char **argv)
 	int mod_idx;
 	int i;
 	int need_arg = 0;
+	int mod_argc = 0;
+	char **mod_argv = NULL;
 
 	prog_name = argv[0];
 
@@ -157,6 +162,8 @@ int main(int argc, char **argv)
 		}
 		if (!strcmp("--", argv[i])) {
 			/* TODO: set pointer to i+1, the rest options are for pppd */
+			mod_argv = argv + i;
+			mod_argc = argc - i;
 			break;
 		}
 		/* unrecognized options may be addressed for the module */
@@ -206,5 +213,5 @@ int main(int argc, char **argv)
 	close(pd_wr[0]);
 
 	/* run appropriate module's function */
-	return mod_tbl[mod_idx].func(argc, argv, pd_rd[0], pd_wr[1]);
+	return mod_tbl[mod_idx].func(mod_argc, mod_argv, pd_rd[0], pd_wr[1]);
 }

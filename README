@@ -2,7 +2,7 @@ PPPoAT - PPP over Any Transport
 
 Inspired by pppoj (PPP over Jabber)
 
-Usage: pppoat [options] [<local_ip>:<remote_ip>] [-- [pppd options]]
+Usage: pppoat [options] [<local_ip>:<remote_ip>] [-- [module's options]]
 Options:
  -h, --help	print this text and exit
  -l, --list	print list of available modules and exit
@@ -32,7 +32,14 @@ traffic for the fisrt one is input for the second and vise versa.
 xmpp module
 ============
 
-In developing...
+Options:
+ -u <jid>	local JID (REQUIRED)
+ -p <password>	password (REQUIRED)
+ -r <jid>	remote JID (OPTIONAL)
+
+Example:
+comp1# ./pppoat -m xmpp 10.0.0.1: -- -u user1@jabber.kiev.ua -p user1passwd
+comp2# ./pppoat -m xmpp 10.0.0.2: -- -u user2@jabber.kiev.ua -p user2passwd -r user1@jabber.kiev.ua
 
 
 sample module
