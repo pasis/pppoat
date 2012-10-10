@@ -82,8 +82,10 @@ int mod_loop(int argc, char **argv, int rd, int wr)
 
 	if (!fifo_creat && check_fifo_stat(LOOP_FIFO_WR))
 		return -EBADF;
-	if (fifo_creat && mknod(LOOP_FIFO_WR, S_IFIFO | 0660, 0))
-		goto out_del_rd;
+	if (fifo_creat && mknod(LOOP_FIFO_WR, S_IFIFO | 0660, 0)) {
+		unlink(LOOP_FIFO_RD);
+		return -EBADF;
+	}
 
 	if (fifo_creat)
 		get_fd_master(&fifo_rd, &fifo_wr);
@@ -102,9 +104,4 @@ int mod_loop(int argc, char **argv, int rd, int wr)
 	pthread_join(thread_wr, NULL);
 
 	return 0;
-
-out_del_rd:
-	unlink(LOOP_FIFO_RD);
-out:
-	return -EBADF;
 }
