@@ -92,7 +92,7 @@ static int message_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanz
 		set_jid_safe(fd->to);
 	}
 	if (strcmp(fd->to, jid)) /* unknown jid - drop */
-		goto out_free_jid;
+		return 1;
 
 	txt = xmpp_stanza_get_text(xmpp_stanza_get_child_by_name(stanza, "body"));
 	buf = b64_decode(txt, &len);
@@ -102,9 +102,6 @@ static int message_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanz
 
 	xmpp_free(fd->ctx, txt);
 	free(buf);
-
-out_free_jid:
-	xmpp_free(fd->ctx, jid);
 
 	return 1;
 }
