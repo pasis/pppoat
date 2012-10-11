@@ -33,8 +33,12 @@ struct module
 
 struct module mod_tbl[] = 
 {
+#ifdef MOD_SAMPLE
 	{"sample", &mod_sample},
+#endif
+#ifdef MOD_LOOP
 	{"loop", &mod_loop},
+#endif
 #ifdef MOD_XMPP
 	{"xmpp", &mod_xmpp},
 #endif
