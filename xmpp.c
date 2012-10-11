@@ -50,12 +50,12 @@ static void *run(void *data)
 			break;
 		if (!fd->to && !get_jid_safe(fd))
 			continue; /* drop */
-		txt = xmpp_stanza_new(fd->ctx);
-		msg = xmpp_stanza_new(fd->ctx);
-		body = xmpp_stanza_new(fd->ctx);
 		buf2 = b64_encode(buf, len);
 		if (!buf2)
 			continue;
+		txt = xmpp_stanza_new(fd->ctx);
+		msg = xmpp_stanza_new(fd->ctx);
+		body = xmpp_stanza_new(fd->ctx);
 		xmpp_stanza_set_text(txt, buf2);
 		xmpp_stanza_set_name(msg, "message");
 		xmpp_stanza_set_type(msg, "chat");
@@ -91,15 +91,21 @@ static int message_handler(xmpp_conn_t * const conn, xmpp_stanza_t * const stanz
 		strcpy(fd->to, jid);
 		set_jid_safe(fd->to);
 	}
-	txt = xmpp_stanza_get_text(xmpp_stanza_get_child_by_name(stanza, "body"));
+	if (strcmp(fd->to, jid)) /* unknown jid - drop */
+		goto out_free_jid;
 
+	txt = xmpp_stanza_get_text(xmpp_stanza_get_child_by_name(stanza, "body"));
 	buf = b64_decode(txt, &len);
 	s = write(fd->wr, buf, len);
 	if (s < 0)
 		perror("write");
-	
+
+	xmpp_free(fd->ctx, txt);
 	free(buf);
-	
+
+out_free_jid:
+	xmpp_free(fd->ctx, jid);
+
 	return 1;
 }
 
