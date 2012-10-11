@@ -119,7 +119,7 @@ conn_handler(xmpp_conn_t * const conn, const xmpp_conn_event_t status,
 	if (status == XMPP_CONN_CONNECT) {
 		pr_log("Connected to jabber server\n");
 		/* init mutex */
-		if (pthread_mutex_init(&mtx, NULL) && !(fd[0].to && fd[1].to)) {
+		if (pthread_mutex_init(&mtx, NULL)) {
 			pr_log("Can't initialize mutex");
 			return;
 		}
@@ -196,7 +196,11 @@ int mod_xmpp(int argc, char **argv, int rd, int wr)
 	fd[0].wr = fd[1].wr = wr;
 	fd[0].ctx = fd[1].ctx = ctx;
 	fd[0].conn = fd[1].conn = conn;
-	fd[0].to = fd[1].to = rmt_jid;
+	/* set `to' only for sender function
+	 * receiver function will remember JID from the first packet
+	 */
+	fd[0].to = NULL;
+	fd[1].to = rmt_jid;
 
 	/* initiate connection */
 	xmpp_connect_client(conn, NULL, 0, &conn_handler, (void *)fd);
