@@ -17,14 +17,14 @@ if test "x$with_pthreads" != xno; then
 fi
 
 if test "x$enable_xmpp" != xno; then
-  PKG_CHECK_MODULES([libstrophe], [libstrophe >= 0.8],
+  PKG_CHECK_MODULES([libcouplet], [libcouplet >= 0.8],
 	[],
-	[AC_MSG_ERROR([libstrophe is required for xmpp module])])
+	[AC_MSG_ERROR([libcouplet is required for xmpp module])])
 fi
 
 # 
 if test "x$enable_xmpp" != xno; then
-  PPPOAT_LIBS="$PPPOAT_LIBS $libstrophe_LIBS"
+  PPPOAT_LIBS="$PPPOAT_LIBS $libcouplet_LIBS"
 fi
 
 AM_CONDITIONAL([MOD_XMPP], [test "x$enable_xmpp" != xno])

@@ -3,7 +3,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <unistd.h>
-#include <strophe.h>
+#include <couplet.h>
 
 #include "base64.h"
 
