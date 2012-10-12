@@ -1,9 +1,9 @@
 AUTOMAKE_OPTIONS = subdir-objects
 
-CFLAGS += -g -Wall
+AM_CFLAGS = -g -Wall
 PPPOAT_LIBS = @PPPOAT_LIBS@
 
-MOD_CFLAGS = 
+MOD_CFLAGS =
 
 ## Main build targets
 bin_PROGRAMS = pppoat
@@ -25,5 +25,5 @@ pppoat_SOURCES += sample.c sample.h
 MOD_CFLAGS += -DMOD_SAMPLE
 endif
 
-pppoat_CFLAGS = $(MOD_CFLAGS)
+pppoat_CFLAGS = $(MOD_CFLAGS) $(AM_CFLAGS)
 pppoat_LDADD = $(PPPOAT_LIBS)
