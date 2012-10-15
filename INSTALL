@@ -1,0 +1,30 @@
+Gentoo
+========
+
+For Gentoo users ebuilds can be found in stuff overlay or gentoo/ directory.
+Installation instructons:
+ 1. layman -a stuff
+ 2. echo =dev-libs/libcouplet-9999 ** >> /etc/portage/package.keywords
+ 3. echo =net-misc/pppoat-9999 ** >> /etc/portage/package.keywords
+ 4. emerge pppoat
+
+
+Building from sources
+=======================
+
+Prerequisites:
+ - autoconf
+ - automake
+ - pkgconfig
+ - libcouplet (for xmpp module)
+
+Getting sources:
+ git clone git://github.com/pasis/pppoat.git pppoat
+
+Compiling:
+ 1. run ./bootstrap
+ 2. run ./configure --enable-xmpp
+ 3. run make
+
+Installing:
+ make install
