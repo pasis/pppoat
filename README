@@ -57,4 +57,4 @@ steps should be as follows:
  2. add #include "sample.h" to pppoat.c
  3. add {"sample", &mod_sample} to mod_tbl within pppoat.c
  4. add sample.c sample.h to pppoat_SOURCES within Makefile.am
- 5. this is it; now you can run "pppoat -m sample <ip>:"
+ 5. this is it; now you can run "pppoat -m sample <ip>:" after building
