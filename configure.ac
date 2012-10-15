@@ -6,7 +6,6 @@ AM_PROG_CC_C_O
 
 AC_ARG_ENABLE([xmpp], [AS_HELP_STRING([--enable-xmpp], [enable xmpp module])])
 AC_ARG_ENABLE([loop], [AS_HELP_STRING([--enable-loop], [enable loop module])])
-AC_ARG_ENABLE([sample], [AS_HELP_STRING([--enable-sample], [enable sample module])])
 
 AC_ARG_WITH([pthreads],
 	[AS_HELP_STRING([--without-pthreads], [disable check for pthread.h])])
@@ -29,7 +28,6 @@ fi
 
 AM_CONDITIONAL([MOD_XMPP], [test "x$enable_xmpp" != xno])
 AM_CONDITIONAL([MOD_LOOP], [test "x$enable_loop" = xyes])
-AM_CONDITIONAL([MOD_SAMPLE], [test "x$enable_sample" = xyes])
 AC_SUBST(PPPOAT_LIBS)
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT

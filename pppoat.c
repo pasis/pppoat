@@ -7,7 +7,6 @@
 #include <string.h>
 
 /* modules */
-#include "sample.h"
 #include "loopback.h"
 #include "xmpp.h"
 
@@ -33,9 +32,6 @@ struct module
 
 struct module mod_tbl[] = 
 {
-#ifdef MOD_SAMPLE
-	{"sample", &mod_sample},
-#endif
 #ifdef MOD_LOOP
 	{"loop", &mod_loop},
 #endif

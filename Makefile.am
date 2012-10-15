@@ -20,10 +20,5 @@ pppoat_SOURCES += loopback.c loopback.h
 MOD_CFLAGS += -DMOD_LOOP
 endif
 
-if MOD_SAMPLE
-pppoat_SOURCES += sample.c sample.h
-MOD_CFLAGS += -DMOD_SAMPLE
-endif
-
 pppoat_CFLAGS = $(MOD_CFLAGS) $(AM_CFLAGS)
 pppoat_LDADD = $(PPPOAT_LIBS)
