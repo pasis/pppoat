@@ -14,15 +14,16 @@ sample	does nothing
 loop	creates loopback
 xmpp	PPP over XMPP protocol
 
-Pay attention, pppd need to recognize local ip address for pppX interface.
-Therefore you must set <local_ip> on each side or set <local_ip>:<remote_ip> on one of them.
+Pay attention, pppd needs to recognize local ip address for pppX interface.
+Therefore you must set <local_ip> on each side or set <local_ip>:<remote_ip>
+on one of them.
 
 
 loop module
 ============
 
-Currently you can test in the following way: run two instances of pppoat with
-root privileges, for example
+Currently you can test pppoat in the following way: run two instances of
+pppoat with root privileges, for example:
 	sudo ./pppoat -m loop 10.0.0.1:
 	sudo ./pppoat -m loop 10.0.0.2:
 This will create two interfaces pppX with appropriate ip addresses. Output
@@ -31,6 +32,8 @@ traffic for the fisrt one is input for the second and vise versa.
 
 xmpp module
 ============
+
+xmpp module provides PPP over Jabber.
 
 Options:
  -u <jid>	local JID (REQUIRED)
@@ -45,4 +48,13 @@ comp2# ./pppoat -m xmpp 10.0.0.2: -- -u user2@jabber.kiev.ua -p user2passwd -r u
 sample module
 ==============
 
-Don't use it.
+Sample module is a skeleton for writing new module. The code is placed at
+example/ directory. After developing you need to add the module to pppoat.c
+file into mod_tbl structure. Also you need to add source files to Makefile.am.
+For example, you have written your module based on sample skeleton. Your next
+steps should be as follows:
+ 1. place sample.c and sample.h near pppoat.c
+ 2. add #include "sample.h" to pppoat.c
+ 3. add {"sample", &mod_sample} to mod_tbl within pppoat.c
+ 4. add sample.c sample.h to pppoat_SOURCES within Makefile.am
+ 5. this is it; now you can run "pppoat -m sample <ip>:"
