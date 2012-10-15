@@ -47,7 +47,7 @@ char *prog_name;
 static void help(char *name)
 {
 	printf(PPPOAT_DESCR " version " PPPOAT_VERSION "\n"
-	"Usage: %s [options] [<local_ip>:<remote_ip>] [-- [pppd options]]\n"
+	"Usage: %s [options] [<local_ip>:<remote_ip>] [-- [module's options]]\n"
 	"\n"
 	"Options:\n"
 	" -h, --help\tprint this text and exit\n"
