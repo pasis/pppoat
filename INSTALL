@@ -22,7 +22,7 @@ Getting sources:
  git clone git://github.com/pasis/pppoat.git pppoat
 
 Compiling:
- 1. run ./bootstrap
+ 1. run ./bootstrap.sh
  2. run ./configure --enable-xmpp
  3. run make
 
