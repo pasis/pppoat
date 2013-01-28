@@ -3,7 +3,9 @@
 
 #include "base64.h"
 
-const char cb64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+const char cb64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+		    "abcdefghijklmnopqrstuvwxyz"
+		    "0123456789+/";
 
 char *b64_encode(char *buf, size_t len)
 {
