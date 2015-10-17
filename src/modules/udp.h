@@ -1,5 +1,5 @@
-/* util.h
- * PPP over Any Transport -- Helper routines
+/* modules/udp.h
+ * PPP over Any Transport -- UDP transport
  *
  * Copyright (C) 2012-2015 Dmitry Podgorny <pasis.ua@gmail.com>
  *
@@ -17,14 +17,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __PPPOAT_UTIL_H__
-#define __PPPOAT_UTIL_H__
+#ifndef __PPPOAT_UDP_H__
+#define __PPPOAT_UDP_H__
 
-#ifndef ARRAY_SIZE
-#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
-#endif
+extern const struct pppoat_module pppoat_module_udp;
 
-/* FIXME: rewrite this, the arguments are evaluated twice */
-#define pppoat_max(x, y) ((x) > (y) ? (x) : (y))
-
-#endif /* __PPPOAT_UTIL_H__ */
+#endif /* __PPPOAT_UDP_H__ */

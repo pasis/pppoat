@@ -30,6 +30,7 @@
 #include "log.h"
 #include "util.h"
 
+#include "modules/udp.h"
 #include "modules/xmpp.h"
 
 static const char *pppd_paths[] = {
@@ -42,6 +43,7 @@ static const char *pppd_paths[] = {
 
 static const struct pppoat_module *module_tbl[] = 
 {
+	&pppoat_module_udp,
 	&pppoat_module_xmpp,
 };
 
@@ -95,7 +97,10 @@ static const char *pppd_find(void)
 
 int main(int argc, char **argv)
 {
-	const char *pppd;
+	const struct pppoat_module *m;
+	const char                 *pppd;
+	void                       *userdata;
+	int                         rc;
 
 	pppoat_log_init(PPPOAT_DEBUG);
 
@@ -106,7 +111,14 @@ int main(int argc, char **argv)
 	if (pppd != NULL) {
 		printf("found pppd: %s\n", pppd);
 	}
-	(void)module_find("xmpp");
+	m = module_find("udp");
+	PPPOAT_ASSERT(m != NULL);
+
+	rc = m->m_init(argc, argv, &userdata);
+	PPPOAT_ASSERT(rc == 0);
+	rc = m->m_run(0, 1, 0, userdata);
+	pppoat_error("main", "rc=%d", rc);
+	m->m_fini(userdata);
 
 #if 0 /* XXX from old version */
 	/* create pipes for communication with pppd */

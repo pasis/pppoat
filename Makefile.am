@@ -15,7 +15,9 @@ pppoat_SOURCES =     \
 	src/trace.h
 
 pppoat_SOURCES +=          \
+	src/modules/udp.c  \
 	src/modules/xmpp.c \
+	src/modules/udp.h  \
 	src/modules/xmpp.h
 
 pppoat_CFLAGS = $(AM_CFLAGS)

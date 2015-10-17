@@ -6,6 +6,7 @@ firewalls/proxies or even a floppy net.
 Every transport is implemented as a module.
 
 Available modules:
+  udp		PPP over UDP
   xmpp		PPP over XMPP protocol (PPP over Jabber)
 
 /!\ New version is under development and doesn't work yet.

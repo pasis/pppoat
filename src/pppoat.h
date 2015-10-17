@@ -20,10 +20,18 @@
 #ifndef __PPPOAT_PPPOAT_H__
 #define __PPPOAT_PPPOAT_H__
 
+typedef enum {
+	PPPOAT_NODE_UNKNOWN,
+	PPPOAT_NODE_MASTER,
+	PPPOAT_NODE_SLAVE,
+	PPPOAT_NODE_NR,
+} pppoat_node_type_t;
+
 /**
  * FIXME Documentation
  * XXX pass main config to init()
  * XXX add some get() that returns MASTER/SLAVE, ip, etc
+ * XXX add char *m_help
  */
 struct pppoat_module {
 	const char *m_name;
