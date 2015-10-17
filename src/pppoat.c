@@ -1,3 +1,22 @@
+/* pppoat.c
+ * PPP over Any Transport -- Main routines
+ *
+ * Copyright (C) 2012-2015 Dmitry Podgorny <pasis.ua@gmail.com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <sys/types.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -6,189 +25,90 @@
 #include <stdio.h>
 #include <string.h>
 
-/* modules */
-#include "loopback.h"
+#include "trace.h"
+#include "pppoat.h"
+#include "log.h"
+#include "util.h"
+
 #include "xmpp.h"
 
-#define err_exit(str)	{		\
-			  perror(str);	\
-			  exit(errno);	\
-			}
-
-#define PPPOAT_DESCR	"PPPoAT"
-#define PPPOAT_VERSION	"dev"
-
-#define STD_LOG_PATH	"/var/log/pppoat.log"
-#define STD_PPPD_PATH	"/usr/sbin/pppd"
-
-#define ARG_MODULE	1
-#define ARG_LOG_PATH	2
-
-struct module
-{
-	char *name;
-	int (*func)(int, char **, int, int);
+static const char *pppd_paths[] = {
+	"/sbin/pppd",
+	"/usr/sbin/pppd",
+	"/usr/local/sbin/pppd",
+	"/usr/bin/pppd",
+	"/usr/local/bin/pppd",
 };
 
-struct module mod_tbl[] = 
+static const struct pppoat_module *module_tbl[] = 
 {
-#ifdef MOD_LOOP
-	{"loop", &mod_loop},
-#endif
-#ifdef MOD_XMPP
-	{"xmpp", &mod_xmpp},
-#endif
-	{"", NULL},
+	&pppoat_module_xmpp,
 };
 
-int quiet = 0;
-char *prog_name;
-
-static void help(char *name)
+static void help_print(FILE *f, char *name)
 {
-	printf(PPPOAT_DESCR " version " PPPOAT_VERSION "\n"
-	"Usage: %s [options] [<local_ip>:<remote_ip>] [-- [module's options]]\n"
-	"\n"
-	"Options:\n"
-	" -h, --help\tprint this text and exit\n"
-	" -l, --list\tprint list of available modules and exit\n"
-	" -L <path>\tspecify file for logging\n"
-	" -m <module>\tchoose module\n"
-	" -q, --quiet\tdon't print anything to stdout\n", name);
-	exit(0);
+#ifdef PACKAGE_STRING
+	fprintf(f, PACKAGE_STRING "\n\n");
+#endif /* PACKAGE_STRING */
+
+	fprintf(f, "Usage: %s [options]\n", name);
 }
 
-static void list_mod()
+static const struct pppoat_module *module_find(const char *name)
 {
-	int i = 0;
-	while (mod_tbl[i].func) {
-		printf("%s\n", mod_tbl[i].name);
-		i++;
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(module_tbl); ++i) {
+		if (strcmp(module_tbl[i]->m_name, name) == 0)
+			break;
 	}
-	exit(0);
+	return i < ARRAY_SIZE(module_tbl) ? module_tbl[i] : NULL;
 }
 
-static int is_mod(char *name)
+static void module_list_print(FILE *f)
 {
-	int i = 0;
-	while (mod_tbl[i].func) {
-		if (!strcmp(name, mod_tbl[i].name))
-			return i;
-		i++;
+	int i;
+
+	fprintf(f, "List of modules:\n");
+	for (i = 0; i < ARRAY_SIZE(module_tbl); ++i) {
+		fprintf(f, "  %s   %s\n", module_tbl[i]->m_name,
+					  module_tbl[i]->m_descr);
 	}
-	return -1;
 }
 
-static int redirect_logs(char *path)
+static const char *pppd_find(void)
 {
-	int fd;
-	if (!path)
-		goto out;
-	fd = open(path, O_WRONLY | O_CREAT | O_APPEND, 0664);
-	if (fd < 0 || dup2(fd, 2) < 0)
-		goto out_fd;
-	close(fd);
+	int rc;
+	int i;
 
-	return 0;
-
-out_fd:
-	if (fd > 0)
-		close(fd);
-out:
-	fprintf(stderr, "%s: can't open log file %s\n", prog_name, path);
-	fprintf(stderr, "%s: logging will continue to stderr.\n", prog_name);
-	return -1;
+	for (i = 0; i < ARRAY_SIZE(pppd_paths); ++i) {
+		rc = access(pppd_paths[i], X_OK);
+		if (rc == 0) {
+			break;
+		} else if (errno != ENOENT) {
+			pppoat_info("%s exists, but access(2) returned"
+				    "errno=%d", pppd_paths[i], errno);
+		}
+	}
+	return i < ARRAY_SIZE(pppd_paths) ? pppd_paths[i] : NULL;
 }
 
 int main(int argc, char **argv)
 {
-	/* pipe descriptors */
-	int pd_rd[2], pd_wr[2];
-	pid_t pid;
-	char *pppd = STD_PPPD_PATH;
-	char *log_path = STD_LOG_PATH;
-	char *ip = NULL;
-	char *mod_name = NULL;
-	int mod_idx;
-	int i;
-	int need_arg = 0;
-	int mod_argc = 0;
-	char **mod_argv = NULL;
+	const char *pppd;
 
-	prog_name = argv[0];
+	pppoat_log_init(PPPOAT_DEBUG);
 
-	/* parsing arguments */
-	if (argc < 2)
-		help(argv[0]);
-	for (i = 1; i < argc; i++) {
-		if (need_arg) {
-			switch (need_arg) {
-			case ARG_MODULE:
-				mod_name = argv[i];
-				break;
-			case ARG_LOG_PATH:
-				log_path = argv[i];
-				break;
-			default:
-				fprintf(stderr, "there is internal problem with parsing arguments\n");
-				return 1;
-			}
-			need_arg = 0;
-			continue;
-		}
-		if (argv[i][0] != '-') {
-			/* <local_ip>:<remote_ip> */
-			ip = argv[i];
-			continue;
-		}
-		if (!strcmp("-h", argv[i]) || !strcmp("--help", argv[i]))
-			/* print help and exit */
-			help(argv[0]);
-		if (!strcmp("-l", argv[i]) || !strcmp("--list", argv[i]))
-			/* print list of available modules and exit */
-			list_mod();
-		if (!strcmp("-L", argv[i])) {
-			/* specify file for logging */
-			need_arg = ARG_LOG_PATH;
-			continue;
-		}
-		if (!strcmp("-m", argv[i])) {
-			/* choose module */
-			need_arg = ARG_MODULE;
-			continue;
-		}
-		if (!strcmp("-q", argv[i]) || !strcmp("--quiet", argv[i])) {
-			/* quiet mode */
-			quiet = 1;
-			continue;
-		}
-		if (!strcmp("--", argv[i])) {
-			/* TODO: set pointer to i+1, the rest options are for pppd */
-			mod_argv = argv + i;
-			mod_argc = argc - i;
-			break;
-		}
-		/* unrecognized options may be addressed for the module */
+	/* XXX */
+	help_print(stdout, argv[0]);
+	module_list_print(stdout);
+	pppd = pppd_find();
+	if (pppd != NULL) {
+		printf("found pppd: %s\n", pppd);
 	}
-	if (need_arg) {
-		fprintf(stderr, "incomplete arguments, see %s --help\n", argv[0]);
-		return 2;
-	}
-	/* check whether required arguments are set */
-	if (!mod_name) {
-		fprintf(stderr, "you must choose a module, see %s --help\n", argv[0]);
-		return 2;
-	}
+	(void)module_find("xmpp");
 
-	/* redirect logs to a file */
-	redirect_logs(log_path);
-
-	/* check whether module name is correct */
-	if ((mod_idx = is_mod(mod_name)) < 0) {
-		fprintf(stderr, "there isn't such a module: %s\n", mod_name);
-		return 2;
-	}
-
+#if 0 /* XXX from old version */
 	/* create pipes for communication with pppd */
 	if (pipe(pd_rd) < 0)
 		err_exit("pipe");
@@ -216,4 +136,9 @@ int main(int argc, char **argv)
 
 	/* run appropriate module's function */
 	return mod_tbl[mod_idx].func(mod_argc, mod_argv, pd_rd[0], pd_wr[1]);
+#endif
+
+	pppoat_log_fini();
+
+	return 0;
 }

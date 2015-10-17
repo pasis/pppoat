@@ -1,0 +1,8 @@
+* Interfaces:
+	int pppoat_ctrl_read(int fd, struct pppoat_ctrl_state *state);
+	int pppoat_ctrl_read_buf(void *buf, size_t len,
+				 struct pppoat_ctrl_state *state);
+	int ..._write()
+  for communication module <-> pppoat_main. These functions can return
+  -EAGAIN and save their state. read() returns ORed flags sent by write();
+  other type of communication isn't supported.

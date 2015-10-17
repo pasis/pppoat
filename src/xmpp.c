@@ -1,13 +1,58 @@
-#include <stdio.h>
-#include <stdlib.h>
+/* xmpp.c
+ * PPP over Any Transport -- XMPP module
+ *
+ * Copyright (C) 2012-2015 Dmitry Podgorny <pasis.ua@gmail.com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include <errno.h>
 #include <string.h>
-#include <pthread.h>
-#include <unistd.h>
-#include <couplet.h>
+#include <strophe.h>
 
+#include "xmpp.h"
 #include "base64.h"
+#include "pppoat.h"
 
-#define pr_log(msg) fprintf(stderr, __FILE__ ": " msg)
+struct pppoat_xmpp_ctx {
+	int unused;
+};
+
+static int module_xmpp_init(int argc, char **argv, void **userdata)
+{
+	return -ENOSYS;
+}
+
+static void module_xmpp_fini(void *userdata)
+{
+}
+
+static int module_xmpp_run(int rd, int wr, int ctrl, void *userdata)
+{
+	return -ENOSYS;
+}
+
+const struct pppoat_module pppoat_module_xmpp = {
+	.m_name  = "xmpp",
+	.m_descr = "PPP over Jabber",
+	.m_init  = &module_xmpp_init,
+	.m_fini  = &module_xmpp_fini,
+	.m_run   = &module_xmpp_run,
+};
+
+#if 0 /* XXX from old version */
+#define pr_log(msg, ...) fprintf(stderr, __FILE__ ": " msg, ##__VA_ARGS__)
 
 typedef struct descr {
 	int rd;
@@ -217,3 +262,4 @@ int mod_xmpp(int argc, char **argv, int rd, int wr)
 
 	return 0;
 }
+#endif

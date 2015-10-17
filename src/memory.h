@@ -1,5 +1,5 @@
-/* xmpp.h
- * PPP over Any Transport -- XMPP module
+/* memory.h
+ * PPP over Any Transport -- Allocator
  *
  * Copyright (C) 2012-2015 Dmitry Podgorny <pasis.ua@gmail.com>
  *
@@ -17,9 +17,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __PPPOAT_XMPP_H__
-#define __PPPOAT_XMPP_H__
+#ifndef __PPPOAT_MEMORY_H__
+#define __PPPOAT_MEMORY_H__
 
-extern const struct pppoat_module pppoat_module_xmpp;
+void *pppoat_alloc(size_t size);
+void pppoat_free(void *ptr);
 
-#endif /* __PPPOAT_XMPP_H__ */
+#endif /* __PPPOAT_MEMORY_H__ */

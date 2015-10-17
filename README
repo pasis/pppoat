@@ -1,60 +1,11 @@
 PPPoAT - PPP over Any Transport
 
-Inspired by pppoj (PPP over Jabber)
-
-Usage: pppoat [options] [<local_ip>:<remote_ip>] [-- [module's options]]
-Options:
- -h, --help	print this text and exit
- -l, --list	print list of available modules and exit
- -m <module>	choose module
- -q, --quiet	don't print anything to stdout
+PPPoAT creates point-to-point tunnel over supported transport. The transport
+can be any protocol (like XMPP, HTTP, TCP, etc) or high level logic to bypass
+firewalls/proxies or even a floppy net.
+Every transport is implemented as a module.
 
 Available modules:
-sample	does nothing
-loop	creates loopback
-xmpp	PPP over XMPP protocol
+  xmpp		PPP over XMPP protocol (PPP over Jabber)
 
-Pay attention, pppd needs to recognize local ip address for pppX interface.
-Therefore you must set <local_ip> on each side or set <local_ip>:<remote_ip>
-on one of them.
-
-
-loop module
-============
-
-Currently you can test pppoat in the following way: run two instances of
-pppoat with root privileges, for example:
-	sudo ./pppoat -m loop 10.0.0.1:
-	sudo ./pppoat -m loop 10.0.0.2:
-This will create two interfaces pppX with appropriate ip addresses. Output
-traffic for the fisrt one is input for the second and vise versa.
-
-
-xmpp module
-============
-
-xmpp module provides PPP over Jabber.
-
-Options:
- -u <jid>	local JID (REQUIRED)
- -p <password>	password (REQUIRED)
- -r <jid>	remote JID (OPTIONAL)
-
-Example:
-comp1# ./pppoat -m xmpp 10.0.0.1: -- -u user1@jabber.kiev.ua -p user1passwd
-comp2# ./pppoat -m xmpp 10.0.0.2: -- -u user2@jabber.kiev.ua -p user2passwd -r user1@jabber.kiev.ua
-
-
-sample module
-==============
-
-Sample module is a skeleton for writing new module. The code is placed at
-example/ directory. After developing you need to add the module to pppoat.c
-file into mod_tbl structure. Also you need to add source files to Makefile.am.
-For example, you have written your module based on sample skeleton. Your next
-steps should be as follows:
- 1. place sample.c and sample.h near pppoat.c
- 2. add #include "sample.h" to pppoat.c
- 3. add {"sample", &mod_sample} to mod_tbl within pppoat.c
- 4. add sample.c sample.h to pppoat_SOURCES within Makefile.am
- 5. this is it; now you can run "pppoat -m sample <ip>:" after building
+/!\ New version is under development and doesn't work yet.

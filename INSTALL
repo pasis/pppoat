@@ -17,13 +17,13 @@ Prerequisites:
  - automake
  - pkgconfig
  - pppd
- - libcouplet (for xmpp module)
+ - libstrophe (for xmpp module)
 
 Getting sources:
  git clone git://github.com/pasis/pppoat.git pppoat
 
 Compiling:
- 1. run ./bootstrap.sh
+ 1. run ./autogen.sh
  2. run ./configure --enable-xmpp
  3. run make
 

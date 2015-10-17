@@ -1,5 +1,5 @@
-/* xmpp.h
- * PPP over Any Transport -- XMPP module
+/* util.h
+ * PPP over Any Transport -- Helper routines
  *
  * Copyright (C) 2012-2015 Dmitry Podgorny <pasis.ua@gmail.com>
  *
@@ -17,9 +17,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __PPPOAT_XMPP_H__
-#define __PPPOAT_XMPP_H__
+#ifndef __PPPOAT_UTIL_H__
+#define __PPPOAT_UTIL_H__
 
-extern const struct pppoat_module pppoat_module_xmpp;
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
+#endif
 
-#endif /* __PPPOAT_XMPP_H__ */
+#endif /* __PPPOAT_UTIL_H__ */
