@@ -1,4 +1,4 @@
-AM_CFLAGS = -Wall
+AM_CFLAGS = -Wall -I./src
 
 ## Main build targets
 bin_PROGRAMS = pppoat
@@ -14,6 +14,8 @@ pppoat_SOURCES =     \
 	src/memory.h \
 	src/trace.h
 
-pppoat_SOURCES += src/xmpp.c src/xmpp.h
+pppoat_SOURCES +=          \
+	src/modules/xmpp.c \
+	src/modules/xmpp.h
 
 pppoat_CFLAGS = $(AM_CFLAGS)

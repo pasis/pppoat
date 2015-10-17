@@ -1,4 +1,4 @@
-/* xmpp.c
+/* modules/xmpp.c
  * PPP over Any Transport -- XMPP module
  *
  * Copyright (C) 2012-2015 Dmitry Podgorny <pasis.ua@gmail.com>
@@ -21,7 +21,7 @@
 #include <string.h>
 #include <strophe.h>
 
-#include "xmpp.h"
+#include "modules/xmpp.h"
 #include "base64.h"
 #include "pppoat.h"
 

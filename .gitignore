@@ -17,6 +17,7 @@ ltmain.sh
 .deps
 
 src/*.o
+src/modules/*.o
 pppoat
 
 tags

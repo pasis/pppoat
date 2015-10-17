@@ -30,7 +30,7 @@
 #include "log.h"
 #include "util.h"
 
-#include "xmpp.h"
+#include "modules/xmpp.h"
 
 static const char *pppd_paths[] = {
 	"/sbin/pppd",
