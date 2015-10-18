@@ -34,7 +34,7 @@
 		bool __expr = (expr);                                        \
 		if (!__expr) {                                               \
 			pppoat_fatal("trace",                                \
-				     "%s:%d: %d: Assertion `%s' failed",     \
+				     "%s:%d: %s: Assertion `%s' failed",     \
 				     __FILE__, __LINE__, __func__, # expr);  \
 			abort();                                             \
 		}                                                            \
