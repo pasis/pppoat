@@ -21,3 +21,4 @@ src/modules/*.o
 pppoat
 
 tags
+core
