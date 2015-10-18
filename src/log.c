@@ -58,9 +58,9 @@ void pppoat_log(pppoat_log_level_t level, const char *area,
 
 	va_start(ap, fmt);
 
-	printf("%s %s: ", slevel, area);
-	vprintf(fmt, ap);
-	printf("\n");
+	fprintf(stderr, "%s %s: ", slevel, area);
+	vfprintf(stderr, fmt, ap);
+	fprintf(stderr, "\n");
 
 	va_end(ap);
 }
