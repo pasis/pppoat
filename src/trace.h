@@ -20,6 +20,7 @@
 #ifndef __PPPOAT_TRACE_H__
 #define __PPPOAT_TRACE_H__
 
+#include <errno.h>
 #include <stdbool.h>
 #include <stdlib.h>
 
@@ -34,8 +35,10 @@
 		bool __expr = (expr);                                        \
 		if (!__expr) {                                               \
 			pppoat_fatal("trace",                                \
-				     "%s:%d: %s: Assertion `%s' failed",     \
-				     __FILE__, __LINE__, __func__, # expr);  \
+				     "%s:%d: %s: Assertion `%s' failed"      \
+				     " (errno=%d)",                          \
+				     __FILE__, __LINE__, __func__, # expr,   \
+				     errno);                                 \
 			abort();                                             \
 		}                                                            \
 	} while (0)
