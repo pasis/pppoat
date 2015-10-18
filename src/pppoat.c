@@ -53,7 +53,11 @@ static void help_print(FILE *f, char *name)
 	fprintf(f, PACKAGE_STRING "\n\n");
 #endif /* PACKAGE_STRING */
 
-	fprintf(f, "Usage: %s [options]\n", name);
+	fprintf(f, "Usage: %s [options]\n\n", name);
+	fprintf(f, "Options:\n"
+		   "  --help    Print this help\n"
+		   "  --list    Print list of available modules\n"
+		   "  -s        Server mode\n");
 }
 
 static const struct pppoat_module *module_find(const char *name)
@@ -98,58 +102,71 @@ static const char *pppd_find(void)
 int main(int argc, char **argv)
 {
 	const struct pppoat_module *m;
+	pppoat_node_type_t          type = PPPOAT_NODE_SLAVE;
 	const char                 *pppd;
+	const char                 *ip;
 	void                       *userdata;
+	pid_t                       pid;
+	int                         rd[2];
+	int                         wr[2];
 	int                         rc;
 
 	pppoat_log_init(PPPOAT_DEBUG);
 
-	/* XXX */
-	help_print(stdout, argv[0]);
-	module_list_print(stdout);
-	pppd = pppd_find();
-	if (pppd != NULL) {
-		printf("found pppd: %s\n", pppd);
+	if (argc > 1 && strcmp(argv[1], "--help") == 0) {
+		help_print(stdout, argv[0]);
+		exit(0);
 	}
+	if (argc > 1 && strcmp(argv[1], "--list") == 0) {
+		module_list_print(stdout);
+		exit(0);
+	}
+	if (argc > 1 && strcmp(argv[1], "-s") == 0) {
+		type = PPPOAT_NODE_MASTER;
+	}
+	pppd = pppd_find();
+	pppoat_debug("main", "pppd path: %s", pppd == NULL ? "NULL" : pppd);
 	m = module_find("udp");
 	PPPOAT_ASSERT(m != NULL);
 
 	rc = m->m_init(argc, argv, &userdata);
 	PPPOAT_ASSERT(rc == 0);
-	rc = m->m_run(0, 1, 0, userdata);
-	pppoat_error("main", "rc=%d", rc);
-	m->m_fini(userdata);
+	ip = type == PPPOAT_NODE_MASTER ? "10.0.0.1:10.0.0.2" : NULL;
 
-#if 0 /* XXX from old version */
 	/* create pipes for communication with pppd */
-	if (pipe(pd_rd) < 0)
-		err_exit("pipe");
-	if (pipe(pd_wr) < 0)
-		err_exit("pipe");
+	rc = pipe(rd);
+	PPPOAT_ASSERT(rc == 0);
+	rc = pipe(wr);
+	PPPOAT_ASSERT(rc == 0);
 
 	/* exec pppd */
-	if ((pid = fork()) < 0)
-		err_exit("fork");
-	if (!pid) {
-		if (dup2(pd_rd[1], 1) < 0)
-			err_exit("dup2");
-		if (dup2(pd_wr[0], 0) < 0)
-			err_exit("dup2");
-		close(pd_rd[0]);
-		close(pd_rd[1]);
-		close(pd_wr[0]);
-		close(pd_wr[1]);
-		execl(pppd, pppd, "nodetach", "noauth", "notty", "passive", ip, NULL);
-		err_exit("execl");
+	pid = fork();
+	PPPOAT_ASSERT(pid >= 0);
+	if (pid == 0) {
+		rc = dup2(rd[1], 1);
+		PPPOAT_ASSERT(rc >= 0);
+		rc = dup2(wr[0], 0);
+		PPPOAT_ASSERT(rc >= 0);
+		close(rd[0]);
+		close(rd[1]);
+		close(wr[0]);
+		close(wr[1]);
+		pppoat_debug("main", "%s nodetach noauth notty passive %s",
+			     pppd, ip == NULL ? "" : ip);
+		execl(pppd, pppd, "nodetach", "noauth",
+		      "notty", "passive", ip, NULL);
+		pppoat_error("main", "execl() should never return");
+		exit(1);
 	}
 
-	close(pd_rd[1]);
-	close(pd_wr[0]);
+	close(rd[1]);
+	close(wr[0]);
 
 	/* run appropriate module's function */
-	return mod_tbl[mod_idx].func(mod_argc, mod_argv, pd_rd[0], pd_wr[1]);
-#endif
+	rc = m->m_run(rd[0], wr[1], 0 /* XXX */, userdata);
+	pppoat_error("main", "rc=%d", rc);
 
+	m->m_fini(userdata);
 	pppoat_log_fini();
 
 	return 0;
