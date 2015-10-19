@@ -26,15 +26,23 @@
 
 #include "log.h"
 
-/*
- * TODO: define a macro P_ERR(error) which prints error and place where the
- *       macro is called and returns value of the error.
- */
+#define TRACE_LOC_F "%s:%d: %s:"
+#define TRACE_LOC_P __FILE__, __LINE__, __func__
 
 #ifdef NDEBUG
-#define PPPOAT_ASSERT_INFO(expr) do {} while (0)
-#define PPPOAT_ASSERT(expr)      do {} while (0)
+#define PPPOAT_TRACE_NOOP do {} while (0)
+#define PPPOAT_ASSERT_INFO(expr, fmt, ...) PPPOAT_TRACE_NOOP
+#define PPPOAT_ASSERT(expr)                PPPOAT_TRACE_NOOP
+#define P_ERR(error)                       (error)
 #else /* NDEBUG */
+
+#define P_ERR(error)                                          \
+	({                                                    \
+		int __error = (error);                        \
+		pppoat_error("trace", TRACE_LOC_F" error=%d", \
+			     TRACE_LOC_P, __error);           \
+		__error;                                      \
+	})
 
 #define PPPOAT_ASSERT_INFO(expr, fmt, ...)                                     \
 	do {                                                                   \
@@ -42,10 +50,9 @@
 		bool        __expr = (expr);                                   \
 		if (!__expr) {                                                 \
 			pppoat_fatal("trace",                                  \
-				     "%s:%d: %s: Assertion `%s' failed"        \
+				     TRACE_LOC_F" Assertion `%s' failed"       \
 				     " (errno=%d)",                            \
-				     __FILE__, __LINE__, __func__, # expr,     \
-				     errno);                                   \
+				     TRACE_LOC_P, # expr, errno);              \
 			if (__fmt != NULL) {                                   \
 				pppoat_fatal("trace", __fmt, ## __VA_ARGS__);  \
 			}                                                      \

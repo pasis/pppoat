@@ -76,7 +76,7 @@ static int udp_ainfo_get(struct addrinfo **ainfo,
 	if (rc != 0) {
 		pppoat_error("udp", "getaddrinfo rc=%d: %s",
 			     rc, gai_strerror(rc));
-		rc = -ENOPROTOOPT;
+		rc = P_ERR(-ENOPROTOOPT);
 		*ainfo = NULL;
 	}
 	return rc;
@@ -96,11 +96,11 @@ static int udp_sock_new(unsigned short port, int *sock)
 	if (rc == 0) {
 		*sock = socket(ainfo->ai_family, ainfo->ai_socktype,
 			       ainfo->ai_protocol);
-		rc = *sock < 0 ? -errno : 0;
+		rc = *sock < 0 ? P_ERR(-errno) : 0;
 	}
 	if (rc == 0) {
 		rc = bind(*sock, ainfo->ai_addr, ainfo->ai_addrlen);
-		rc = rc != 0 ? -errno : 0;
+		rc = rc != 0 ? P_ERR(-errno) : 0;
 		if (rc != 0)
 			(void)close(*sock);
 	}
@@ -132,7 +132,7 @@ static int module_udp_init(int argc, char **argv, void **userdata)
 	}
 
 	ctx = pppoat_alloc(sizeof(*ctx));
-	rc  = ctx == NULL ? -ENOMEM : 0;
+	rc  = ctx == NULL ? P_ERR(-ENOMEM) : 0;
 	if (rc == 0) {
 		ctx->uc_type = type;
 		rc = udp_ainfo_get(&ctx->uc_ainfo, dhost, dport);
@@ -192,14 +192,14 @@ static int module_udp_run(int rd, int wr, int ctrl, void *userdata)
 
 		rc = select(max + 1, &rfds, &wfds, NULL, &tv);
 		if (rc < 0 && !udp_error_is_recoverable(-errno)) {
-			rc = -errno;
+			rc = P_ERR(-errno);
 			break;
 		}
 		if (FD_ISSET(rd, &rfds)) {
 			len = read(rd, buf, sizeof(buf));
 			PPPOAT_ASSERT(len != 0); /* XXX */
 			if (len < 0 && !udp_error_is_recoverable(-errno)) {
-				rc = -errno;
+				rc = P_ERR(-errno);
 				break;
 			}
 			if (len > 0) {
@@ -212,7 +212,7 @@ static int module_udp_run(int rd, int wr, int ctrl, void *userdata)
 			len = recv(sock, buf, sizeof(buf), 0); /* XXX use recvfrom */
 			PPPOAT_ASSERT(len != 0); /* XXX */
 			if (len < 0 && !udp_error_is_recoverable(-errno)) {
-				rc = -errno;
+				rc = P_ERR(-errno);
 				break;
 			}
 			if (len > 0) {
