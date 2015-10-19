@@ -35,7 +35,12 @@
 #include "pppoat.h"
 #include "util.h"
 
-#define UDP_PORT_DEFAULT 0xc001
+#define UDP_PORT_MASTER 0xc001
+#define UDP_PORT_SLAVE  0xc001
+#define UDP_HOST_MASTER "192.168.4.1"
+#define UDP_HOST_SLAVE  "192.168.4.10"
+
+#define UDP_TIMEOUT 1000000
 
 struct pppoat_udp_ctx {
 	pppoat_node_type_t  uc_type;
@@ -43,13 +48,19 @@ struct pppoat_udp_ctx {
 	int                 uc_sock;
 };
 
+static void udp_parse_args(int argc, char **argv, pppoat_node_type_t *type)
+{
+	*type = argc > 1 && strcmp(argv[1], "-s") == 0 ? PPPOAT_NODE_MASTER :
+							 PPPOAT_NODE_SLAVE;
+}
+
 static int udp_ainfo_get(struct addrinfo **ainfo,
 			 const char       *host,
 			 unsigned short    port)
 {
-	struct addrinfo  hints;
-	char             service[6];
-	int              rc;
+	struct addrinfo hints;
+	char            service[6];
+	int             rc;
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_flags    = host == NULL ? AI_PASSIVE : 0;
@@ -103,22 +114,34 @@ static int module_udp_init(int argc, char **argv, void **userdata)
 {
 	struct pppoat_udp_ctx *ctx;
 	pppoat_node_type_t     type;
-	unsigned short         port;
-	const char            *host;
+	unsigned short         sport;
+	unsigned short         dport;
+	const char            *dhost;
 	int                    rc;
 
-	type = PPPOAT_NODE_MASTER; /* XXX */
-	port = UDP_PORT_DEFAULT;   /* XXX */
-	host = "192.168.0.99";     /* XXX */
+	/* XXX use hardcoded config for now */
+	udp_parse_args(argc, argv, &type);
+	if (type == PPPOAT_NODE_MASTER) {
+		sport = UDP_PORT_MASTER;
+		dport = UDP_PORT_SLAVE;
+		dhost = UDP_HOST_SLAVE;
+	} else {
+		sport = UDP_PORT_SLAVE;
+		dport = UDP_PORT_MASTER;
+		dhost = UDP_HOST_MASTER;
+	}
 
 	ctx = pppoat_alloc(sizeof(*ctx));
 	rc  = ctx == NULL ? -ENOMEM : 0;
 	if (rc == 0) {
 		ctx->uc_type = type;
-		rc = udp_ainfo_get(&ctx->uc_ainfo, host, port);
-		rc = rc ?: udp_sock_new(port, &ctx->uc_sock);
-		if (rc != 0)
+		rc = udp_ainfo_get(&ctx->uc_ainfo, dhost, dport);
+		rc = rc ?: udp_sock_new(sport, &ctx->uc_sock);
+		if (rc != 0) {
+			if (ctx->uc_ainfo != NULL)
+				udp_ainfo_put(ctx->uc_ainfo);
 			pppoat_free(ctx);
+		}
 	}
 	if (rc == 0) {
 		*userdata = ctx;
@@ -157,7 +180,7 @@ static int module_udp_run(int rd, int wr, int ctrl, void *userdata)
 	int                    max;
 	int                    rc;
 
-	timeout = 1000000; /* XXX */
+	timeout = UDP_TIMEOUT; /* XXX */
 	while (true) {
 		tv.tv_sec  = timeout / 1000000;
 		tv.tv_usec = timeout % 1000000;
