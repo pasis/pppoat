@@ -26,22 +26,34 @@
 
 #include "log.h"
 
+/*
+ * TODO: define a macro P_ERR(error) which prints error and place where the
+ *       macro is called and returns value of the error.
+ */
+
 #ifdef NDEBUG
-#define PPPOAT_ASSERT(expr) do {} while (0)
+#define PPPOAT_ASSERT_INFO(expr) do {} while (0)
+#define PPPOAT_ASSERT(expr)      do {} while (0)
 #else /* NDEBUG */
 
-#define PPPOAT_ASSERT(expr)                                                  \
-	do {                                                                 \
-		bool __expr = (expr);                                        \
-		if (!__expr) {                                               \
-			pppoat_fatal("trace",                                \
-				     "%s:%d: %s: Assertion `%s' failed"      \
-				     " (errno=%d)",                          \
-				     __FILE__, __LINE__, __func__, # expr,   \
-				     errno);                                 \
-			abort();                                             \
-		}                                                            \
+#define PPPOAT_ASSERT_INFO(expr, fmt, ...)                                     \
+	do {                                                                   \
+		const char *__fmt  = (fmt);                                    \
+		bool        __expr = (expr);                                   \
+		if (!__expr) {                                                 \
+			pppoat_fatal("trace",                                  \
+				     "%s:%d: %s: Assertion `%s' failed"        \
+				     " (errno=%d)",                            \
+				     __FILE__, __LINE__, __func__, # expr,     \
+				     errno);                                   \
+			if (__fmt != NULL) {                                   \
+				pppoat_fatal("trace", __fmt, ## __VA_ARGS__);  \
+			}                                                      \
+			abort();                                               \
+		}                                                              \
 	} while (0)
+
+#define PPPOAT_ASSERT(expr) PPPOAT_ASSERT_INFO(expr, NULL)
 
 #endif /* NDEBUG */
 

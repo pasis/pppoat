@@ -130,7 +130,7 @@ int main(int argc, char **argv)
 	PPPOAT_ASSERT(m != NULL);
 
 	rc = m->m_init(argc, argv, &userdata);
-	PPPOAT_ASSERT(rc == 0);
+	PPPOAT_ASSERT_INFO(rc == 0, "rc=%d", rc);
 	ip = type == PPPOAT_NODE_MASTER ? "10.0.0.1:10.0.0.2" : NULL;
 
 	/* create pipes for communication with pppd */
