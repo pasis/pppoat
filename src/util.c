@@ -1,4 +1,4 @@
-/* util.h
+/* util.c
  * PPP over Any Transport -- Helper routines
  *
  * Copyright (C) 2012-2015 Dmitry Podgorny <pasis.ua@gmail.com>
@@ -17,18 +17,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __PPPOAT_UTIL_H__
-#define __PPPOAT_UTIL_H__
+#include <unistd.h>
+#include <fcntl.h>
 
-#include <stdbool.h>
+#include "trace.h"
+#include "util.h"
+#include "log.h"
 
-#ifndef ARRAY_SIZE
-#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
-#endif
+int pppoat_util_fd_nonblock_set(int fd, bool set)
+{
+	int rc;
 
-/* FIXME: rewrite this, the arguments are evaluated twice */
-#define pppoat_max(x, y) ((x) > (y) ? (x) : (y))
+	rc = fcntl(fd, F_GETFL, NULL);
+	if (rc >= 0) {
+		/* rc contains flags */
+		rc = set ? (rc | O_NONBLOCK) : (rc & (~O_NONBLOCK));
+		rc = fcntl(fd, F_SETFL, rc);
+	}
+	rc = rc == -1 ? P_ERR(-errno) : 0;
 
-int pppoat_util_fd_nonblock_set(int fd, bool set);
-
-#endif /* __PPPOAT_UTIL_H__ */
+	return rc;
+}

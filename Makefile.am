@@ -8,11 +8,13 @@ pppoat_SOURCES =     \
 	src/base64.c \
 	src/log.c    \
 	src/memory.c \
+	src/util.c   \
 	src/pppoat.h \
 	src/base64.h \
 	src/log.h    \
 	src/memory.h \
-	src/trace.h
+	src/trace.h  \
+	src/util.h
 
 pppoat_SOURCES +=          \
 	src/modules/udp.c  \
