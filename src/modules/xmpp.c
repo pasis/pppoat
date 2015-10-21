@@ -18,29 +18,136 @@
  */
 
 #include <errno.h>
+#include <stdbool.h>
 #include <string.h>
 #include <strophe.h>
 
+#include "trace.h"
 #include "modules/xmpp.h"
 #include "base64.h"
+#include "log.h"
+#include "memory.h"
 #include "pppoat.h"
 
+#define PPPOAT_XMPP_TIMEOUT 1000
+
 struct pppoat_xmpp_ctx {
-	int unused;
+	pppoat_node_type_t  xc_type;
+	xmpp_log_t          xc_log;
+	xmpp_ctx_t         *xc_ctx;
+	xmpp_conn_t        *xc_conn;
+	const char         *xc_jid;
+	const char         *xc_passwd;
+	const char         *xc_remote;
+	bool                xc_stop;
 };
+
+static void pppoat_xmpp_log(void                  *userdata,
+			    const xmpp_log_level_t level,
+			    const char * const     area,
+			    const char * const     msg)
+{
+	pppoat_log_level_t l = PPPOAT_DEBUG;
+
+	switch (level) {
+	case XMPP_LEVEL_DEBUG:
+		l = PPPOAT_DEBUG;
+		break;
+	case XMPP_LEVEL_INFO:
+		l = PPPOAT_INFO;
+		break;
+	case XMPP_LEVEL_WARN:
+		l = PPPOAT_INFO;
+		break;
+	case XMPP_LEVEL_ERROR:
+		l = PPPOAT_ERROR;
+		break;
+	}
+	pppoat_log(l, area, msg);
+}
+
+static void pppoat_xmpp_parse_args(int                      argc,
+				   char                   **argv,
+				   struct pppoat_xmpp_ctx  *ctx)
+{
+	if (argc > 1 && strcmp(argv[1], "-s") == 0) {
+		ctx->xc_type = PPPOAT_NODE_MASTER;
+		++argv;
+		--argc;
+	} else {
+		ctx->xc_type = PPPOAT_NODE_SLAVE;
+	}
+	PPPOAT_ASSERT(argc > 2);
+	ctx->xc_jid    = argv[1];
+	ctx->xc_passwd = argv[2];
+	ctx->xc_remote = argc > 3 ? argv[3] : NULL;
+}
 
 static int module_xmpp_init(int argc, char **argv, void **userdata)
 {
-	return -ENOSYS;
+	struct pppoat_xmpp_ctx *ctx;
+	int                     rc;
+
+	ctx = pppoat_alloc(sizeof(*ctx));
+	rc  = ctx == NULL ? P_ERR(-ENOMEM) : 0;
+	if (rc == 0) {
+		pppoat_xmpp_parse_args(argc, argv, ctx);
+		xmpp_initialize();
+		ctx->xc_log = (xmpp_log_t){
+			.handler = &pppoat_xmpp_log,
+		};
+		ctx->xc_ctx = xmpp_ctx_new(NULL, &ctx->xc_log);
+		PPPOAT_ASSERT(ctx->xc_ctx != NULL);
+		ctx->xc_conn = xmpp_conn_new(ctx->xc_ctx);
+		PPPOAT_ASSERT(ctx->xc_conn != NULL);
+		ctx->xc_stop = false;
+	}
+	if (rc == 0) {
+		*userdata = ctx;
+	}
+	return rc;
 }
 
 static void module_xmpp_fini(void *userdata)
 {
+	struct pppoat_xmpp_ctx *ctx = userdata;
+
+	xmpp_conn_release(ctx->xc_conn);
+	xmpp_ctx_free(ctx->xc_ctx);
+	pppoat_free(ctx);
+	xmpp_shutdown();
+}
+
+static void conn_handler(xmpp_conn_t * const         conn,
+			 const xmpp_conn_event_t     status,
+			 const int                   error,
+			 xmpp_stream_error_t * const stream_error,
+			 void * const                userdata)
+{
+	struct pppoat_xmpp_ctx *ctx = userdata;
+
+	if (status == XMPP_CONN_CONNECT) {
+		/* XXX just for check */
+		xmpp_disconnect(ctx->xc_conn);
+	}
+	if (status == XMPP_CONN_DISCONNECT) {
+		ctx->xc_stop = true;
+	}
 }
 
 static int module_xmpp_run(int rd, int wr, int ctrl, void *userdata)
 {
-	return -ENOSYS;
+	struct pppoat_xmpp_ctx *ctx  = userdata;
+	xmpp_conn_t            *conn = ctx->xc_conn;
+
+	xmpp_conn_set_jid(conn, ctx->xc_jid);
+	xmpp_conn_set_pass(conn, ctx->xc_passwd);
+	xmpp_connect_client(conn, NULL, 0, &conn_handler, userdata);
+
+	while (!ctx->xc_stop) {
+		xmpp_run_once(ctx->xc_ctx, PPPOAT_XMPP_TIMEOUT);
+	}
+	return 0;
 }
 
 const struct pppoat_module pppoat_module_xmpp = {
