@@ -17,34 +17,30 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <sys/types.h>
-#include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
-#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "trace.h"
 #include "pppoat.h"
+#include "if.h"
 #include "log.h"
 #include "util.h"
 
+#include "if_pppd.h"
 #include "modules/udp.h"
 #include "modules/xmpp.h"
 
-static const char *pppd_paths[] = {
-	"/sbin/pppd",
-	"/usr/sbin/pppd",
-	"/usr/local/sbin/pppd",
-	"/usr/bin/pppd",
-	"/usr/local/bin/pppd",
-};
-
-static const struct pppoat_module *module_tbl[] = 
+static const struct pppoat_module *module_tbl[] =
 {
 	&pppoat_module_udp,
 	&pppoat_module_xmpp,
+};
+
+static const struct pppoat_if_module *if_module_tbl[] =
+{
+	&pppoat_if_module_pppd,
 };
 
 static void help_print(FILE *f, char *name)
@@ -82,34 +78,15 @@ static void module_list_print(FILE *f)
 	}
 }
 
-static const char *pppd_find(void)
-{
-	int rc;
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(pppd_paths); ++i) {
-		rc = access(pppd_paths[i], X_OK);
-		if (rc == 0) {
-			break;
-		} else if (errno != ENOENT) {
-			pppoat_info("%s exists, but access(2) returned"
-				    "errno=%d", pppd_paths[i], errno);
-		}
-	}
-	return i < ARRAY_SIZE(pppd_paths) ? pppd_paths[i] : NULL;
-}
-
 int main(int argc, char **argv)
 {
-	const struct pppoat_module *m;
-	pppoat_node_type_t          type = PPPOAT_NODE_SLAVE;
-	const char                 *pppd;
-	const char                 *ip;
-	void                       *userdata;
-	pid_t                       pid;
-	int                         rd[2];
-	int                         wr[2];
-	int                         rc;
+	const struct pppoat_module    *m;
+	const struct pppoat_if_module *im;
+	void                          *m_data;
+	void                          *im_data;
+	int                            rd[2];
+	int                            wr[2];
+	int                            rc;
 
 	pppoat_log_init(PPPOAT_DEBUG);
 
@@ -121,17 +98,17 @@ int main(int argc, char **argv)
 		module_list_print(stdout);
 		exit(0);
 	}
-	if (argc > 1 && strcmp(argv[1], "-s") == 0) {
-		type = PPPOAT_NODE_MASTER;
-	}
-	pppd = pppd_find();
-	pppoat_debug("main", "pppd path: %s", pppd == NULL ? "NULL" : pppd);
+
+	im = if_module_tbl[0];
+	PPPOAT_ASSERT(im != NULL);
 	m = module_find("udp");
 	PPPOAT_ASSERT(m != NULL);
 
-	rc = m->m_init(argc, argv, &userdata);
+	/* init modules */
+	rc = im->im_init(argc, argv, &im_data);
 	PPPOAT_ASSERT_INFO(rc == 0, "rc=%d", rc);
-	ip = type == PPPOAT_NODE_MASTER ? "10.0.0.1:10.0.0.2" : NULL;
+	rc = m->m_init(argc, argv, &m_data);
+	PPPOAT_ASSERT_INFO(rc == 0, "rc=%d", rc);
 
 	/* create pipes for communication with pppd */
 	rc = pipe(rd);
@@ -140,33 +117,22 @@ int main(int argc, char **argv)
 	PPPOAT_ASSERT(rc == 0);
 
 	/* exec pppd */
-	pid = fork();
-	PPPOAT_ASSERT(pid >= 0);
-	if (pid == 0) {
-		rc = dup2(rd[1], 1);
-		PPPOAT_ASSERT(rc >= 0);
-		rc = dup2(wr[0], 0);
-		PPPOAT_ASSERT(rc >= 0);
-		close(rd[0]);
-		close(rd[1]);
-		close(wr[0]);
-		close(wr[1]);
-		pppoat_debug("main", "%s nodetach noauth notty passive %s",
-			     pppd, ip == NULL ? "" : ip);
-		execl(pppd, pppd, "nodetach", "noauth",
-		      "notty", "passive", ip, NULL);
-		pppoat_error("main", "execl() should never return");
-		exit(1);
-	}
-
+	rc = im->im_run(wr[0], rd[1], im_data);
+	PPPOAT_ASSERT_INFO(rc == 0, "rc=%d", rc);
 	close(rd[1]);
 	close(wr[0]);
 
 	/* run appropriate module's function */
-	rc = m->m_run(rd[0], wr[1], 0 /* XXX */, userdata);
+	rc = m->m_run(rd[0], wr[1], 0 /* XXX */, m_data);
 	pppoat_error("main", "rc=%d", rc);
 
-	m->m_fini(userdata);
+	/* finalisation */
+	im->im_stop(im_data);
+	im->im_fini(im_data);
+	m->m_fini(m_data);
+	close(rd[0]);
+	close(wr[1]);
+
 	pppoat_log_fini();
 
 	return 0;
