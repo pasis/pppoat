@@ -29,6 +29,7 @@
 #include "util.h"
 
 #include "if_pppd.h"
+#include "if_tun.h"
 #include "modules/udp.h"
 #include "modules/xmpp.h"
 
@@ -41,6 +42,8 @@ static const struct pppoat_module *module_tbl[] =
 static const struct pppoat_if_module *if_module_tbl[] =
 {
 	&pppoat_if_module_pppd,
+	&pppoat_if_module_tun,
+	&pppoat_if_module_tap,
 };
 
 static void help_print(FILE *f, char *name)

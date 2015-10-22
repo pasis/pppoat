@@ -7,6 +7,7 @@ pppoat_SOURCES =      \
 	src/pppoat.c  \
 	src/base64.c  \
 	src/if_pppd.c \
+	src/if_tun.c  \
 	src/log.c     \
 	src/memory.c  \
 	src/util.c    \
@@ -14,6 +15,7 @@ pppoat_SOURCES =      \
 	src/base64.h  \
 	src/if.h      \
 	src/if_pppd.h \
+	src/if_tun.h  \
 	src/log.h     \
 	src/memory.h  \
 	src/trace.h   \
