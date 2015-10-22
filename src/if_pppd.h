@@ -20,6 +20,8 @@
 #ifndef __PPPOAT_IF_PPPD_H__
 #define __PPPOAT_IF_PPPD_H__
 
+#include "if.h"
+
 extern const struct pppoat_if_module pppoat_if_module_pppd;
 
 #endif /* __PPPOAT_IF_PPPD_H__ */

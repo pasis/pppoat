@@ -28,6 +28,7 @@
 #include <string.h>
 
 #include "trace.h"
+#include "if_pppd.h"
 #include "if.h"
 #include "log.h"
 #include "memory.h"

@@ -6,3 +6,5 @@
   for communication module <-> pppoat_main. These functions can return
   -EAGAIN and save their state. read() returns ORed flags sent by write();
   other type of communication isn't supported.
+
+* Port to other posix systems
