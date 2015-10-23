@@ -27,4 +27,6 @@ pppoat_SOURCES +=          \
 	src/modules/udp.h  \
 	src/modules/xmpp.h
 
-pppoat_CFLAGS = $(AM_CFLAGS)
+# FIXME: make -pthread configurable
+pppoat_CFLAGS = -pthread $(AM_CFLAGS)
+pppoat_LDFLAGS = -pthread
