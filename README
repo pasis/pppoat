@@ -1,12 +1,20 @@
 PPPoAT - PPP over Any Transport
 
-PPPoAT creates point-to-point tunnel over supported transport. The transport
-can be any protocol (like XMPP, HTTP, TCP, etc) or high level logic to bypass
-firewalls/proxies or even a floppy net.
-Every transport is implemented as a module.
+PPPoAT creates point-to-point tunnel over a transport. The transport can be
+any software realisation which sends data from one pppoat instance to another.
 
-Available modules:
-  udp		PPP over UDP
-  xmpp		PPP over XMPP protocol (PPP over Jabber)
+PPPoAT features:
+  * Multiple network interface types: PPP, TUN/TAP driver
+  * Easy platform for implementation of new transports
+
+List of few possible transports:
+  * Network protocol from any layer (IP, TCP, XMPP, HTTP, etc)
+  * High level logic over a protocol (e.g. traffic encryption, obfuscation,
+    sending over multiple paths, etc)
+  * Usage of a media without network stack over it (physical port/bus ?)
+
+Available transports:
+  udp		Tunnel over UDP
+  xmpp		Tunnel over XMPP protocol (Jabber)
 
 /!\ New version is under development and doesn't work yet.
