@@ -8,3 +8,8 @@
   other type of communication isn't supported.
 
 * Port to other posix systems
+
+* Reduce copy-paste
+
+* Make a common function that copies data between descriptors in proper way.
+  Linux can use splice(2) for streams.
