@@ -26,7 +26,6 @@
 #include <sys/types.h>
 #include <sys/select.h>
 #include <sys/socket.h>
-#include <sys/time.h>
 #include <unistd.h>
 
 #include "trace.h"
@@ -39,8 +38,6 @@
 #define UDP_PORT_SLAVE  0xc001
 #define UDP_HOST_MASTER "192.168.4.1"
 #define UDP_HOST_SLAVE  "192.168.4.10"
-
-#define UDP_TIMEOUT 1000000
 
 struct pppoat_udp_ctx {
 	pppoat_node_type_t  uc_type;
@@ -165,59 +162,74 @@ static bool udp_error_is_recoverable(int error)
 		error == -EWOULDBLOCK);
 }
 
+static int udp_buf_send(struct pppoat_udp_ctx *ctx,
+			unsigned char         *buf,
+			ssize_t                len)
+{
+	struct addrinfo *ainfo = ctx->uc_ainfo;
+	ssize_t          len2  = 0;
+	fd_set           wfds;
+	int              rc    = 0;
+
+	do {
+		len2 = sendto(ctx->uc_sock, buf, len, 0, ainfo->ai_addr,
+			      ainfo->ai_addrlen);
+		if (len2 < 0 && errno == EINTR)
+			continue;
+		if (len2 < 0 && !udp_error_is_recoverable(-errno))
+			rc = P_ERR(-errno);
+		if (len2 < 0 && udp_error_is_recoverable(-errno)) {
+			FD_ZERO(&wfds);
+			FD_SET(ctx->uc_sock, &wfds);
+			rc = pppoat_util_select(ctx->uc_sock, NULL, &wfds);
+		}
+		if (len2 > 0) {
+			buf += len2;
+			len -= len2;
+		}
+	} while (rc == 0 && len > 0);
+
+	return rc;
+}
+
 static int module_udp_run(int rd, int wr, int ctrl, void *userdata)
 {
-	struct pppoat_udp_ctx *ctx   = userdata;
-	struct addrinfo       *ainfo = ctx->uc_ainfo;
-	struct timeval         tv;
-	unsigned long          timeout;
-	unsigned char          buf[4096];
+	struct pppoat_udp_ctx *ctx = userdata;
+	unsigned char          buf[4096]; /* XXX allocate during init */
 	ssize_t                len;
-	ssize_t                len2;
 	fd_set                 rfds;
-	fd_set                 wfds;
 	int                    sock = ctx->uc_sock;
 	int                    max;
-	int                    rc;
+	int                    rc = 0;
 
-	timeout = UDP_TIMEOUT; /* XXX */
-	while (true) {
-		tv.tv_sec  = timeout / 1000000;
-		tv.tv_usec = timeout % 1000000;
+	rc = pppoat_util_fd_nonblock_set(rd,   true)
+	  ?: pppoat_util_fd_nonblock_set(sock, true);
+
+	while (rc == 0) {
 		FD_ZERO(&rfds);
-		FD_ZERO(&wfds);
-		FD_SET(rd, &rfds);
+		FD_SET(rd,   &rfds);
 		FD_SET(sock, &rfds);
 		max = pppoat_max(rd, sock);
+		rc  = pppoat_util_select(max, &rfds, NULL);
+		rc  = rc > 0 ? 0 : rc;
 
-		rc = select(max + 1, &rfds, &wfds, NULL, &tv);
-		if (rc < 0 && !udp_error_is_recoverable(-errno)) {
-			rc = P_ERR(-errno);
-			break;
-		}
 		if (FD_ISSET(rd, &rfds)) {
 			len = read(rd, buf, sizeof(buf));
-			PPPOAT_ASSERT(len != 0); /* XXX */
-			if (len < 0 && !udp_error_is_recoverable(-errno)) {
+			if (len == 0)
+				rc = P_ERR(-EPIPE);
+			if (len < 0 && !udp_error_is_recoverable(-errno))
 				rc = P_ERR(-errno);
-				break;
-			}
-			if (len > 0) {
-				len2 = sendto(sock, buf, len, 0,
-					     ainfo->ai_addr, ainfo->ai_addrlen);
-				PPPOAT_ASSERT(len2 == len); /* XXX */
-			}
+			if (len > 0)
+				rc = udp_buf_send(ctx, buf, len);
 		}
-		if (FD_ISSET(sock, &rfds)) {
-			len = recv(sock, buf, sizeof(buf), 0); /* XXX use recvfrom */
-			PPPOAT_ASSERT(len != 0); /* XXX */
-			if (len < 0 && !udp_error_is_recoverable(-errno)) {
+		if (rc == 0 && FD_ISSET(sock, &rfds)) {
+			/* XXX use recvfrom() */
+			len = recv(sock, buf, sizeof(buf), 0);
+			if (len < 0 && !udp_error_is_recoverable(-errno))
 				rc = P_ERR(-errno);
-				break;
-			}
-			if (len > 0) {
-				len2 = write(wr, buf, len);
-				PPPOAT_ASSERT(len2 == len); /* XXX */
+			if (len > 0)  {
+				rc = pppoat_util_write_sync(wr, buf,
+							    (size_t)len);
 			}
 		}
 	}
@@ -228,6 +240,6 @@ const struct pppoat_module pppoat_module_udp = {
 	.m_name  = "udp",
 	.m_descr = "PPP over UDP",
 	.m_init  = &module_udp_init,
-	.m_fini  = module_udp_fini,
-	.m_run   = module_udp_run,
+	.m_fini  = &module_udp_fini,
+	.m_run   = &module_udp_run,
 };
