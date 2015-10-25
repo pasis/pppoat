@@ -78,7 +78,7 @@ static bool util_error_is_recoverable(int error)
 	       error == -EINTR;
 }
 
-int pppoat_util_write_sync(int fd, void *buf, size_t len)
+int pppoat_util_write(int fd, void *buf, size_t len)
 {
 	ssize_t nlen = (ssize_t)len;
 	ssize_t wlen;
@@ -101,6 +101,28 @@ int pppoat_util_write_sync(int fd, void *buf, size_t len)
 			nlen -= wlen;
 		}
 	} while (rc == 0 && nlen > 0);
+
+	return rc;
+}
+
+int pppoat_util_write_fd(int dst, int src)
+{
+	unsigned char buf[4096]; /* FIXME: avoid buffer on stack */
+	ssize_t       len;
+	int           rc = 0;
+
+	/* TODO: use splice(2) on Linux */
+	do {
+		len = read(src, buf, sizeof(buf));
+		if (len < 0 && errno == EINTR)
+			continue;
+		if (len < 0 && !util_error_is_recoverable(-errno))
+			rc = P_ERR(-errno);
+		if (len == 0)
+			rc = P_ERR(-EPIPE); /* FIXME: return EOF somehow */
+		if (len > 0)
+			rc = pppoat_util_write(dst, buf, len);
+	} while (false);
 
 	return rc;
 }

@@ -21,6 +21,7 @@
 #define __PPPOAT_UTIL_H__
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <limits.h>
 #include <sys/select.h>
 
@@ -41,6 +42,7 @@ int pppoat_util_select_timed(int            maxfd,
 			     fd_set        *wfds,
 			     unsigned long  usec);
 
-int pppoat_util_write_sync(int fd, void *buf, size_t len);
+int pppoat_util_write(int fd, void *buf, size_t len);
+int pppoat_util_write_fd(int dst, int src);
 
 #endif /* __PPPOAT_UTIL_H__ */
