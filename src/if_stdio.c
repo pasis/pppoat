@@ -30,8 +30,7 @@
 #include "if.h"
 #include "log.h"
 #include "memory.h"
-
-#define PPPOAT_STDIO_TIMEOUT 1000000
+#include "util.h"
 
 struct stdio_ctx {
 	int        sc_rd;
@@ -66,40 +65,24 @@ static void if_module_stdio_fini(void *userdata)
 static void *stdio_thread(void *userdata)
 {
 	struct stdio_ctx *ctx = userdata;
-	struct timeval    tv;
-	unsigned long     timeout;
-	unsigned char     buf[4096]; /* TODO: alloc during init */
-	ssize_t           len;
-	ssize_t           len2;
 	fd_set            rfds;
 	int               rc;
 
-	timeout = PPPOAT_STDIO_TIMEOUT; /* XXX */
-
 	while (sem_trywait(&ctx->sc_stop) != 0) {
-		tv.tv_sec  = timeout / 1000000;
-		tv.tv_usec = timeout % 1000000;
 		FD_ZERO(&rfds);
 		FD_SET(ctx->sc_rd, &rfds);
 		FD_SET(0, &rfds);
-		do {
-			rc = select(ctx->sc_rd + 1, &rfds, NULL, NULL, &tv);
-		} while (rc < 0 && errno == EINTR);
+		rc = pppoat_util_select(ctx->sc_rd, &rfds, NULL);
 		PPPOAT_ASSERT(rc >= 0);
 
 		if (FD_ISSET(ctx->sc_rd, &rfds)) {
-			len = read(ctx->sc_rd, buf, sizeof(buf));
-			PPPOAT_ASSERT(len >= 0);
-			len2 = write(1, buf, len);
-			PPPOAT_ASSERT_INFO(len2 == len, "len2=%zd", len2);
+			rc = pppoat_util_write_fd(1, ctx->sc_rd);
+			PPPOAT_ASSERT(rc == 0);
 		}
 		if (FD_ISSET(0, &rfds)) {
-			len = read(0, buf, sizeof(buf));
-			PPPOAT_ASSERT(len >= 0);
-			if (len == 0)
-				break;
-			len2 = write(ctx->sc_wr, buf, len);
-			PPPOAT_ASSERT_INFO(len2 == len, "len2=%zd", len2);
+			rc = pppoat_util_write_fd(ctx->sc_wr, 0);
+			/* FIXME: handle EOF */
+			PPPOAT_ASSERT(rc == 0);
 		}
 	}
 	close(ctx->sc_rd);

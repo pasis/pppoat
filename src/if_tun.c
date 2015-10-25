@@ -38,8 +38,6 @@
 #include "memory.h"
 #include "util.h"
 
-#define PPPOAT_TUN_TIMEOUT 1000000
-
 typedef enum {
 	PPPOAT_IF_TUN,
 	PPPOAT_IF_TAP,
@@ -82,6 +80,7 @@ static int if_module_tun_init_common(int          argc,
 	PPPOAT_ASSERT(strlen(ifr.ifr_name) < sizeof(ctx->tc_name));
 	strcpy(ctx->tc_name, ifr.ifr_name);
 
+	pppoat_debug("tun/tap", "Created interface %s", ctx->tc_name);
 	*userdata = ctx;
 
 	return 0;
@@ -110,43 +109,27 @@ static void if_module_tun_fini(void *userdata)
 static void *tun_thread(void *userdata)
 {
 	struct tun_ctx *ctx = userdata;
-	struct timeval  tv;
-	unsigned long   timeout;
-	unsigned char   buf[4096]; /* TODO: alloc during init */
-	ssize_t         len;
-	ssize_t         len2;
 	fd_set          rfds;
 	int             max;
 	int             rc;
 
-	timeout = PPPOAT_TUN_TIMEOUT; /* XXX */
-
 	while (sem_trywait(&ctx->tc_stop) != 0) {
-		tv.tv_sec  = timeout / 1000000;
-		tv.tv_usec = timeout % 1000000;
 		FD_ZERO(&rfds);
 		FD_SET(ctx->tc_rd, &rfds);
 		FD_SET(ctx->tc_fd, &rfds);
 		max = pppoat_max(ctx->tc_rd, ctx->tc_fd);
-		do {
-			rc = select(max + 1, &rfds, NULL, NULL, &tv);
-		} while (rc < 0 && errno == EINTR);
+		rc  = pppoat_util_select(max, &rfds, NULL);
 		PPPOAT_ASSERT(rc >= 0);
 
 		if (FD_ISSET(ctx->tc_rd, &rfds)) {
-			len = read(ctx->tc_rd, buf, sizeof(buf));
-			PPPOAT_ASSERT(len >= 0);
-			len2 = write(ctx->tc_fd, buf, len);
-			PPPOAT_ASSERT_INFO(len2 == len, "len2=%zd", len2);
+			rc = pppoat_util_write_fd(ctx->tc_fd, ctx->tc_rd);
+			PPPOAT_ASSERT(rc == 0);
 		}
 		if (FD_ISSET(ctx->tc_fd, &rfds)) {
-			len = read(ctx->tc_fd, buf, sizeof(buf));
-			PPPOAT_ASSERT(len >= 0);
-			len2 = write(ctx->tc_wr, buf, len);
-			PPPOAT_ASSERT_INFO(len2 == len, "len2=%zd", len2);
+			rc = pppoat_util_write_fd(ctx->tc_wr, ctx->tc_fd);
+			PPPOAT_ASSERT(rc == 0);
 		}
 	}
-
 	return NULL;
 }
 

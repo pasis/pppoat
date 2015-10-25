@@ -227,10 +227,8 @@ static int module_udp_run(int rd, int wr, int ctrl, void *userdata)
 			len = recv(sock, buf, sizeof(buf), 0);
 			if (len < 0 && !udp_error_is_recoverable(-errno))
 				rc = P_ERR(-errno);
-			if (len > 0)  {
-				rc = pppoat_util_write_sync(wr, buf,
-							    (size_t)len);
-			}
+			if (len > 0)
+				rc = pppoat_util_write(wr, buf, (size_t)len);
 		}
 	}
 	return rc;
