@@ -26,7 +26,7 @@ static pppoat_log_level_t log_level_min = PPPOAT_LOG_LEVEL_NR;
 
 static const char *log_level_name_tbl[PPPOAT_LOG_LEVEL_NR] = {
 	[PPPOAT_DEBUG] = "DEBUG",
-	[PPPOAT_INFO]  = "INFO",
+	[PPPOAT_INFO]  = "INFO ",
 	[PPPOAT_ERROR] = "ERROR",
 	[PPPOAT_FATAL] = "FATAL",
 };
