@@ -21,6 +21,10 @@
 #define __PPPOAT_UTIL_H__
 
 #include <stdbool.h>
+#include <limits.h>
+#include <sys/select.h>
+
+#define PPPOAT_TIME_NEVER ULONG_MAX
 
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
@@ -30,5 +34,13 @@
 #define pppoat_max(x, y) ((x) > (y) ? (x) : (y))
 
 int pppoat_util_fd_nonblock_set(int fd, bool set);
+
+int pppoat_util_select(int maxfd, fd_set *rfds, fd_set *wfds);
+int pppoat_util_select_timed(int            maxfd,
+			     fd_set        *rfds,
+			     fd_set        *wfds,
+			     unsigned long  usec);
+
+int pppoat_util_write_sync(int fd, void *buf, size_t len);
 
 #endif /* __PPPOAT_UTIL_H__ */
