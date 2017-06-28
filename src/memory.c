@@ -17,7 +17,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdlib.h>
+#include <stdlib.h>	/* malloc, free */
+#include <string.h>	/* memset */
 
 #include "memory.h"
 
@@ -26,7 +27,23 @@ void *pppoat_alloc(size_t size)
 	return malloc(size);
 }
 
+void *pppoat_calloc(size_t nmemb, size_t size)
+{
+	size_t  arr_size = nmemb * size;
+	void   *ptr      = pppoat_alloc(arr_size);
+
+	if (ptr != NULL)
+		memset(ptr, 0, arr_size);
+	return ptr;
+}
+
 void pppoat_free(void *ptr)
 {
 	free(ptr);
+}
+
+char *pppoat_strdup(const char *s)
+{
+	/* TODO implement via pppoat_alloc() */
+	return strdup(s);
 }

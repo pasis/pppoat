@@ -4,16 +4,18 @@ AM_CFLAGS = -Wall -I./src
 bin_PROGRAMS = pppoat
 
 pppoat_SOURCES =      \
-	src/pppoat.c  \
 	src/base64.c  \
+	src/conf.c    \
 	src/log.c     \
 	src/memory.c  \
+	src/pppoat.c  \
 	src/util.c    \
-	src/pppoat.h  \
 	src/base64.h  \
+	src/conf.h    \
 	src/if.h      \
 	src/log.h     \
 	src/memory.h  \
+	src/pppoat.h  \
 	src/trace.h   \
 	src/util.h
 

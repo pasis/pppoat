@@ -8,6 +8,8 @@ AM_PROG_CC_C_O
 
 AC_ARG_ENABLE([xmpp], [AS_HELP_STRING([--disable-xmpp], [disable xmpp module])])
 
+AC_CHECK_FUNCS_ONCE(getopt_long)
+
 if test "x$enable_xmpp" != xno; then
   PKG_CHECK_MODULES([libstrophe], [libstrophe >= 0.8.9],
 	[],

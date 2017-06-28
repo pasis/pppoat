@@ -20,7 +20,12 @@
 #ifndef __PPPOAT_MEMORY_H__
 #define __PPPOAT_MEMORY_H__
 
+#include <stddef.h>	/* size_t */
+
 void *pppoat_alloc(size_t size);
+void *pppoat_calloc(size_t nmemb, size_t size);
 void pppoat_free(void *ptr);
+
+char *pppoat_strdup(const char *s);
 
 #endif /* __PPPOAT_MEMORY_H__ */

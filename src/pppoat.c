@@ -24,6 +24,7 @@
 
 #include "trace.h"
 #include "pppoat.h"
+#include "conf.h"
 #include "if.h"
 #include "log.h"
 #include "util.h"
@@ -48,6 +49,7 @@ static const struct pppoat_if_module *if_module_tbl[] =
 	&pppoat_if_module_stdio,
 };
 
+/* TODO Construct help message from the conf array. */
 static void help_print(FILE *f, char *name)
 {
 #ifdef PACKAGE_STRING
@@ -56,57 +58,86 @@ static void help_print(FILE *f, char *name)
 
 	fprintf(f, "Usage: %s [options]\n\n", name);
 	fprintf(f, "Options:\n"
-		   "  --help    Print this help\n"
-		   "  --list    Print list of available modules\n"
-		   "  -s        Server mode\n");
+		   "  --dest=<ip> (-d)     Destination IP for the tunnel\n"
+		   "  --help (-h)          Print this help\n"
+		   "  --if=<name> (-i)     Interface module name\n"
+		   "  --list (-l)          Print list of available modules\n"
+		   "  --module=<name> (-m) Transport module name\n"
+		   "  --server (-S)        Server mode\n"
+		   "  --src=<ip> (-s)      Source IP for the tunnel\n");
 }
 
 static const struct pppoat_module *module_find(const char *name)
 {
 	int i;
 
-	for (i = 0; i < ARRAY_SIZE(module_tbl); ++i) {
+	for (i = 0; i < ARRAY_SIZE(module_tbl); ++i)
 		if (strcmp(module_tbl[i]->m_name, name) == 0)
 			break;
-	}
 	return i < ARRAY_SIZE(module_tbl) ? module_tbl[i] : NULL;
+}
+
+static const struct pppoat_if_module *if_module_find(const char *name)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(if_module_tbl); ++i)
+		if (strcmp(if_module_tbl[i]->im_name, name) == 0)
+			break;
+	return i < ARRAY_SIZE(if_module_tbl) ? if_module_tbl[i] : NULL;
 }
 
 static void module_list_print(FILE *f)
 {
 	int i;
 
-	fprintf(f, "List of modules:\n");
-	for (i = 0; i < ARRAY_SIZE(module_tbl); ++i) {
+	fprintf(f, "List of interface modules:\n");
+	for (i = 0; i < ARRAY_SIZE(if_module_tbl); ++i)
+		fprintf(f, "  %s   %s\n", if_module_tbl[i]->im_name,
+					  if_module_tbl[i]->im_descr);
+	fprintf(f, "\n");
+	fprintf(f, "List of transport modules:\n");
+	for (i = 0; i < ARRAY_SIZE(module_tbl); ++i)
 		fprintf(f, "  %s   %s\n", module_tbl[i]->m_name,
 					  module_tbl[i]->m_descr);
-	}
 }
 
 int main(int argc, char **argv)
 {
 	const struct pppoat_module    *m;
 	const struct pppoat_if_module *im;
+	struct pppoat_conf             conf;
+	const char                    *if_name;
 	void                          *m_data;
 	void                          *im_data;
+	bool                           present;
 	int                            rd[2];
 	int                            wr[2];
 	int                            rc;
 
 	pppoat_log_init(PPPOAT_DEBUG);
+	rc = pppoat_conf_init(&conf);
+	PPPOAT_ASSERT(rc == 0);
+	rc = pppoat_conf_args_parse(&conf, argc, argv);
+	PPPOAT_ASSERT(rc == 0);
 
-	if (argc > 1 && strcmp(argv[1], "--help") == 0) {
+	if (pppoat_conf_obj_is_true(pppoat_conf_get(&conf, "help"))) {
 		help_print(stdout, argv[0]);
 		exit(0);
 	}
-	if (argc > 1 && strcmp(argv[1], "--list") == 0) {
+	if (pppoat_conf_obj_is_true(pppoat_conf_get(&conf, "list"))) {
 		module_list_print(stdout);
 		exit(0);
 	}
 
-	im = if_module_tbl[0];
+	/* XXX Check mandatory options. Replace with better solution. */
+	present = pppoat_conf_get(&conf, "module") != NULL;
+	PPPOAT_ASSERT_INFO(present, "Mandatory option is missed");
+
+	if_name = pppoat_conf_get(&conf, "if");
+	im = if_name == NULL ? if_module_tbl[0] : if_module_find(if_name);
 	PPPOAT_ASSERT(im != NULL);
-	m = module_find("udp");
+	m = module_find(pppoat_conf_get(&conf, "module"));
 	PPPOAT_ASSERT(m != NULL);
 
 	/* init modules */
@@ -138,6 +169,7 @@ int main(int argc, char **argv)
 	close(rd[0]);
 	close(wr[1]);
 
+	pppoat_conf_fini(&conf);
 	pppoat_log_fini();
 
 	return 0;
