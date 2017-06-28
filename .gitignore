@@ -20,5 +20,6 @@ src/*.o
 src/modules/*.o
 pppoat
 
+*.swp
 tags
 core

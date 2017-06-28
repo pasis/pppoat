@@ -1,7 +1,7 @@
 PPPoAT - PPP over Any Transport
 
 PPPoAT creates point-to-point tunnel over a transport. The transport can be
-any software realisation which sends data from one pppoat instance to another.
+any software implementation which sends data from one pppoat instance to another.
 
 PPPoAT features:
   * Multiple network interface types: PPP, TUN/TAP driver
