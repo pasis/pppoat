@@ -96,9 +96,24 @@ bool pppoat_conf_obj_is_true(const char *obj)
 			       strcmp(obj, "1")    == 0);
 }
 
+static void _conf_dump(const struct pppoat_conf *conf)
+{
+	int i;
+
+	pppoat_debug("conf", "Content:");
+	for (i = 0; i < CONF_KEYS_MAX; ++i)
+		if (conf->cfg_keys[i] != NULL)
+			pppoat_debug("conf", "  %s = %s", conf->cfg_keys[i],
+							  conf->cfg_vals[i]);
+}
+
 int pppoat_conf_args_parse(struct pppoat_conf *conf, int argc, char **argv)
 {
-	int opt;
+	size_t  len;
+	char   *key;
+	char   *val;
+	int     opt;
+	int     i;
 
 	/*
 	 * TODO Create array of supported options with descriptions.
@@ -151,5 +166,18 @@ int pppoat_conf_args_parse(struct pppoat_conf *conf, int argc, char **argv)
 			;
 		}
 	}
+	for (i = optind; i < argc; ++i) {
+		len = strcspn(argv[i], "=");
+		key = pppoat_alloc(len + 1);
+		PPPOAT_ASSERT(key != NULL);
+		memcpy(key, argv[i], len);
+		key[len] = '\0';
+		val = argv[i][len] == '=' ? &argv[i][len + 1] : "true";
+		pppoat_conf_update(conf, key, val);
+		pppoat_free(key);
+	}
+	/* XXX debug */
+	_conf_dump(conf);
+
 	return 0;
 }

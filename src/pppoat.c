@@ -56,7 +56,7 @@ static void help_print(FILE *f, char *name)
 	fprintf(f, PACKAGE_STRING "\n\n");
 #endif /* PACKAGE_STRING */
 
-	fprintf(f, "Usage: %s [options]\n\n", name);
+	fprintf(f, "Usage: %s [options] [module-specific-options]\n\n", name);
 	fprintf(f, "Options:\n"
 		   "  --dest=<ip> (-d)     Destination IP for the tunnel\n"
 		   "  --help (-h)          Print this help\n"
