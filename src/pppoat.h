@@ -20,6 +20,8 @@
 #ifndef __PPPOAT_PPPOAT_H__
 #define __PPPOAT_PPPOAT_H__
 
+struct pppoat_conf;
+
 typedef enum {
 	PPPOAT_NODE_UNKNOWN,
 	PPPOAT_NODE_MASTER,
@@ -36,7 +38,7 @@ typedef enum {
 struct pppoat_module {
 	const char *m_name;
 	const char *m_descr;
-	int       (*m_init)(int argc, char **argv, void **userdata);
+	int       (*m_init)(struct pppoat_conf *conf, void **userdata);
 	void      (*m_fini)(void *userdata);
 	int       (*m_run)(int rd, int wr, int ctrl, void *userdata);
 };

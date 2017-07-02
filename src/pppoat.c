@@ -143,7 +143,7 @@ int main(int argc, char **argv)
 	/* init modules */
 	rc = im->im_init(argc, argv, &im_data);
 	PPPOAT_ASSERT_INFO(rc == 0, "rc=%d", rc);
-	rc = m->m_init(argc, argv, &m_data);
+	rc = m->m_init(&conf, &m_data);
 	PPPOAT_ASSERT_INFO(rc == 0, "rc=%d", rc);
 
 	/* create pipes for communication with pppd */

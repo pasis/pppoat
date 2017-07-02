@@ -29,6 +29,7 @@
 #include <unistd.h>
 
 #include "trace.h"
+#include "conf.h"
 #include "log.h"
 #include "memory.h"
 #include "pppoat.h"
@@ -44,12 +45,6 @@ struct pppoat_udp_ctx {
 	struct addrinfo    *uc_ainfo;
 	int                 uc_sock;
 };
-
-static void udp_parse_args(int argc, char **argv, pppoat_node_type_t *type)
-{
-	*type = argc > 1 && strcmp(argv[1], "-s") == 0 ? PPPOAT_NODE_MASTER :
-							 PPPOAT_NODE_SLAVE;
-}
 
 static int udp_ainfo_get(struct addrinfo **ainfo,
 			 const char       *host,
@@ -107,17 +102,21 @@ static int udp_sock_new(unsigned short port, int *sock)
 	return rc;
 }
 
-static int module_udp_init(int argc, char **argv, void **userdata)
+static int module_udp_init(struct pppoat_conf *conf, void **userdata)
 {
 	struct pppoat_udp_ctx *ctx;
 	pppoat_node_type_t     type;
 	unsigned short         sport;
 	unsigned short         dport;
 	const char            *dhost;
+	const char            *opt;
 	int                    rc;
 
+	opt = pppoat_conf_get(conf, "server");
+	type = opt != NULL && pppoat_conf_obj_is_true(opt) ?
+	       PPPOAT_NODE_MASTER : PPPOAT_NODE_SLAVE;
+
 	/* XXX use hardcoded config for now */
-	udp_parse_args(argc, argv, &type);
 	if (type == PPPOAT_NODE_MASTER) {
 		sport = UDP_PORT_MASTER;
 		dport = UDP_PORT_SLAVE;

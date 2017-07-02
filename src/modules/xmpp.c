@@ -25,6 +25,7 @@
 #include "trace.h"
 #include "modules/xmpp.h"
 #include "base64.h"
+#include "conf.h"
 #include "log.h"
 #include "memory.h"
 #include "pppoat.h"
@@ -38,7 +39,7 @@ struct pppoat_xmpp_ctx {
 	xmpp_conn_t        *xc_conn;
 	const char         *xc_jid;
 	const char         *xc_passwd;
-	const char         *xc_remote;
+	const char         *xc_to;
 	bool                xc_stop;
 };
 
@@ -66,24 +67,24 @@ static void pppoat_xmpp_log(void                  *userdata,
 	pppoat_log(l, area, msg);
 }
 
-static void pppoat_xmpp_parse_args(int                      argc,
-				   char                   **argv,
+static void pppoat_xmpp_parse_args(struct pppoat_conf      *conf,
 				   struct pppoat_xmpp_ctx  *ctx)
 {
-	if (argc > 1 && strcmp(argv[1], "-s") == 0) {
-		ctx->xc_type = PPPOAT_NODE_MASTER;
-		++argv;
-		--argc;
-	} else {
-		ctx->xc_type = PPPOAT_NODE_SLAVE;
-	}
-	PPPOAT_ASSERT(argc > 2);
-	ctx->xc_jid    = argv[1];
-	ctx->xc_passwd = argv[2];
-	ctx->xc_remote = argc > 3 ? argv[3] : NULL;
+	const char *opt;
+
+	opt = pppoat_conf_get(conf, "server");
+	ctx->xc_type = opt != NULL && pppoat_conf_obj_is_true(opt) ?
+		       PPPOAT_NODE_MASTER : PPPOAT_NODE_SLAVE;
+
+	ctx->xc_jid    = pppoat_conf_get(conf, "xmpp.jid");
+	ctx->xc_passwd = pppoat_conf_get(conf, "xmpp.passwd");
+	ctx->xc_to     = pppoat_conf_get(conf, "xmpp.to");
+	PPPOAT_ASSERT(ctx->xc_jid != NULL);
+	PPPOAT_ASSERT(ctx->xc_passwd != NULL);
+	PPPOAT_ASSERT(ctx->xc_type == PPPOAT_NODE_MASTER || ctx->xc_to != NULL);
 }
 
-static int module_xmpp_init(int argc, char **argv, void **userdata)
+static int module_xmpp_init(struct pppoat_conf *conf, void **userdata)
 {
 	struct pppoat_xmpp_ctx *ctx;
 	int                     rc;
@@ -91,7 +92,7 @@ static int module_xmpp_init(int argc, char **argv, void **userdata)
 	ctx = pppoat_alloc(sizeof(*ctx));
 	rc  = ctx == NULL ? P_ERR(-ENOMEM) : 0;
 	if (rc == 0) {
-		pppoat_xmpp_parse_args(argc, argv, ctx);
+		pppoat_xmpp_parse_args(conf, ctx);
 		xmpp_initialize();
 		ctx->xc_log = (xmpp_log_t){
 			.handler = &pppoat_xmpp_log,
