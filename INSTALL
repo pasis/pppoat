@@ -4,9 +4,8 @@ Gentoo
 For Gentoo users ebuilds can be found in stuff overlay or gentoo/ directory.
 Installation instructons:
  1. layman -a stuff
- 2. echo =dev-libs/libstrophe-9999 ** >> /etc/portage/package.keywords
- 3. echo =net-misc/pppoat-9999 ** >> /etc/portage/package.keywords
- 4. emerge pppoat
+ 2. echo =net-misc/pppoat-9999 ** >> /etc/portage/package.keywords
+ 3. emerge pppoat
 
 
 Building from sources

@@ -13,8 +13,20 @@ List of few possible transports:
     sending over multiple paths, etc)
   * Usage of a media without network stack over it (physical port/bus ?)
 
-Available transports:
+Available interface modules:
+  ppp		PPP interface (requires pppd)
+  tap		TUN/TAP driver (TAP interface)
+  tun		TUN/TAP driver (TUN interface)
+  stdio		STDIN/STDOUT tunneling
+
+Available transport modules:
   udp		Tunnel over UDP
   xmpp		Tunnel over XMPP protocol (Jabber)
 
-/!\ New version is under development and doesn't work yet.
+Example:
+  The next example creates ppp0 interfaces on each side with IPs 10.0.0.1 and 10.0.0.2:
+  (server) pppoat -S -m xmpp xmpp.jid=pppoat@domain.com xmpp.passwd=password
+  (client) pppoat -m xmpp xmpp.jid=pppoat-slave@domain.com xmpp.to=pppoat@domain.com xmpp.passwd=password
+
+/!\ New version is under development
+/!\ UDP module contains hardcoded configuration
