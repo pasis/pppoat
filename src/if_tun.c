@@ -32,6 +32,7 @@
 #include <unistd.h>
 
 #include "trace.h"
+#include "conf.h"
 #include "if_tun.h"
 #include "if.h"
 #include "log.h"
@@ -55,10 +56,9 @@ struct tun_ctx {
 
 static const char *tun_path = "/dev/net/tun";
 
-static int if_module_tun_init_common(int          argc,
-				     char       **argv,
-				     void       **userdata,
-				     tun_type_t   type)
+static int if_module_tun_init_common(struct pppoat_conf  *conf,
+				     void               **userdata,
+				     tun_type_t           type)
 {
 	struct tun_ctx *ctx;
 	struct ifreq    ifr;
@@ -86,15 +86,15 @@ static int if_module_tun_init_common(int          argc,
 	return 0;
 }
 
-static int if_module_tun_init(int argc, char **argv, void **userdata)
+static int if_module_tun_init(struct pppoat_conf *conf, void **userdata)
 {
-	return if_module_tun_init_common(argc, argv, userdata, PPPOAT_IF_TUN);
+	return if_module_tun_init_common(conf, userdata, PPPOAT_IF_TUN);
 }
 
 /* this is the only TAP specific function in op vector */
-static int if_module_tap_init(int argc, char **argv, void **userdata)
+static int if_module_tap_init(struct pppoat_conf *conf, void **userdata)
 {
-	return if_module_tun_init_common(argc, argv, userdata, PPPOAT_IF_TAP);
+	return if_module_tun_init_common(conf, userdata, PPPOAT_IF_TAP);
 }
 
 static void if_module_tun_fini(void *userdata)

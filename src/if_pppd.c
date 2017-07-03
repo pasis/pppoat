@@ -28,6 +28,7 @@
 #include <string.h>
 
 #include "trace.h"
+#include "conf.h"
 #include "if_pppd.h"
 #include "if.h"
 #include "log.h"
@@ -65,9 +66,10 @@ static const char *pppd_find(void)
 	return i < ARRAY_SIZE(pppd_paths) ? pppd_paths[i] : NULL;
 }
 
-static int if_module_pppd_init(int argc, char **argv, void **userdata)
+static int if_module_pppd_init(struct pppoat_conf *conf, void **userdata)
 {
 	struct pppd_ctx *ctx;
+	const char      *obj;
 	int              rc;
 
 	ctx = pppoat_alloc(sizeof(*ctx));
@@ -80,12 +82,11 @@ static int if_module_pppd_init(int argc, char **argv, void **userdata)
 			pppoat_free(ctx);
 	}
 
-	/* XXX make more flexible ip configuration */
-	if (rc == 0 && argc > 1 && strcmp(argv[1], "-s") == 0) {
-		ctx->pc_ip = "10.0.0.1:10.0.0.2";
-	}
-
 	if (rc == 0) {
+		obj = pppoat_conf_get(conf, "server");
+		/* XXX make more flexible ip configuration */
+		if (obj != NULL && pppoat_conf_obj_is_true(obj))
+			ctx->pc_ip = "10.0.0.1:10.0.0.2";
 		*userdata = ctx;
 	}
 	return rc;

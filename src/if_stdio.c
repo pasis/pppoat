@@ -26,6 +26,7 @@
 #include <unistd.h>
 
 #include "trace.h"
+#include "conf.h"
 #include "if_stdio.h"
 #include "if.h"
 #include "log.h"
@@ -39,7 +40,7 @@ struct stdio_ctx {
 	sem_t      sc_stop;
 };
 
-static int if_module_stdio_init(int argc, char **argv, void **userdata)
+static int if_module_stdio_init(struct pppoat_conf *conf, void **userdata)
 {
 	struct stdio_ctx *ctx;
 	int               rc;

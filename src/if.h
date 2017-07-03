@@ -31,7 +31,7 @@
 struct pppoat_if_module {
 	const char *im_name;
 	const char *im_descr;
-	int       (*im_init)(int argc, char **argv, void **userdata);
+	int       (*im_init)(struct pppoat_conf *conf, void **userdata);
 	void      (*im_fini)(void *userdata);
 	int       (*im_run)(int rd, int wr, void *userdata);
 	int       (*im_stop)(void *userdata);

@@ -141,7 +141,7 @@ int main(int argc, char **argv)
 	PPPOAT_ASSERT(m != NULL);
 
 	/* init modules */
-	rc = im->im_init(argc, argv, &im_data);
+	rc = im->im_init(&conf, &im_data);
 	PPPOAT_ASSERT_INFO(rc == 0, "rc=%d", rc);
 	rc = m->m_init(&conf, &m_data);
 	PPPOAT_ASSERT_INFO(rc == 0, "rc=%d", rc);
