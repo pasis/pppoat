@@ -1,4 +1,4 @@
-AM_CFLAGS = -Wall -I./src
+AM_CFLAGS = -Wall -Werror -I./src
 
 ## Main build targets
 bin_PROGRAMS = pppoat
