@@ -103,13 +103,15 @@ static int pppoat_xmpp_send_buf(struct pppoat_xmpp_ctx *ctx,
 	if (ctx->xc_to == NULL)
 		return 0; /* XXX */
 
-	b64 = xmpp_base64_encode(ctx->xc_ctx, buf, len);
+	rc = pppoat_base64_enc_new(buf, len, &b64);
+	PPPOAT_ASSERT(rc == 0);
 	message = xmpp_message_new(ctx->xc_ctx, "chat", ctx->xc_to, NULL);
+	PPPOAT_ASSERT(message != NULL);
 	rc = xmpp_message_set_body(message, b64);
 	PPPOAT_ASSERT(rc == XMPP_EOK);
 	xmpp_send(ctx->xc_conn, message);
 	xmpp_stanza_release(message);
-	xmpp_free(ctx->xc_ctx, b64);
+	pppoat_free(b64);
 
 	return 0;
 }
@@ -171,6 +173,7 @@ static int message_handler(xmpp_conn_t * const   conn,
 	char                   *bare;
 	ssize_t                 written;
 	size_t                  raw_len;
+	int                     rc;
 
 	from = xmpp_stanza_get_from(stanza);
 	PPPOAT_ASSERT(from != NULL);
@@ -208,13 +211,13 @@ static int message_handler(xmpp_conn_t * const   conn,
 		pppoat_debug("xmpp", "Skipping incomplete message");
 		return 1;
 	}
-	xmpp_base64_decode_bin(ctx->xc_ctx, b64, strlen(b64), &raw, &raw_len);
-	PPPOAT_ASSERT(raw != NULL);
+	rc = pppoat_base64_dec_new(b64, strlen(b64), &raw, &raw_len);
+	PPPOAT_ASSERT(rc == 0);
 
 	written = write(ctx->xc_wr, raw, raw_len);
 	PPPOAT_ASSERT_INFO(written == raw_len, "written=%zi", written);
 
-	xmpp_free(ctx->xc_ctx, raw);
+	pppoat_free(raw);
 	xmpp_free(ctx->xc_ctx, b64);
 
 	return 1;
