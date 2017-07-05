@@ -123,11 +123,11 @@ int main(int argc, char **argv)
 
 	if (pppoat_conf_obj_is_true(pppoat_conf_get(&conf, "help"))) {
 		help_print(stdout, argv[0]);
-		exit(0);
+		goto quit;
 	}
 	if (pppoat_conf_obj_is_true(pppoat_conf_get(&conf, "list"))) {
 		module_list_print(stdout);
-		exit(0);
+		goto quit;
 	}
 
 	/* XXX Check mandatory options. Replace with better solution. */
@@ -169,6 +169,7 @@ int main(int argc, char **argv)
 	close(rd[0]);
 	close(wr[1]);
 
+quit:
 	pppoat_conf_fini(&conf);
 	pppoat_log_fini();
 
