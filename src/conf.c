@@ -39,6 +39,12 @@ int pppoat_conf_init(struct pppoat_conf *conf)
 
 void pppoat_conf_fini(struct pppoat_conf *conf)
 {
+	int i;
+
+	for (i = 0; i < CONF_KEYS_MAX; ++i) {
+		pppoat_free(conf->cfg_keys[i]);
+		pppoat_free(conf->cfg_vals[i]);
+	}
 	pppoat_free(conf->cfg_keys);
 	pppoat_free(conf->cfg_vals);
 }
