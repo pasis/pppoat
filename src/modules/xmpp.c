@@ -242,7 +242,7 @@ static void conn_handler(xmpp_conn_t * const         conn,
 		ctx->xc_connected = true;
 	}
 	if (status == XMPP_CONN_DISCONNECT) {
-		pppoat_debug("xmpp", "Disconnected with error=%d,"
+		pppoat_debug("xmpp", "Disconnected with error=%d, "
 				     "stream_error=%d", error, stream_error);
 		ctx->xc_stop = true;
 	}
