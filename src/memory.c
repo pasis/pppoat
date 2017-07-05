@@ -44,6 +44,10 @@ void pppoat_free(void *ptr)
 
 char *pppoat_strdup(const char *s)
 {
-	/* TODO implement via pppoat_alloc() */
-	return strdup(s);
+	char *out = pppoat_alloc(strlen(s) + 1);
+
+	if (out != NULL)
+		strcpy(out, s);
+
+	return out;
 }
