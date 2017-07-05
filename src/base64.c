@@ -98,7 +98,7 @@ void pppoat_base64_dec(const char *base64,
 	PPPOAT_ASSERT(len % 4 == 0);
 	PPPOAT_ASSERT(result_len == pppoat_base64_dec_len(base64, len));
 
-	for(i = 0; i < len; i++) {
+	for (i = 0; i < len; i++) {
 		c = strchr(cb64, (int) *buf++);
 		PPPOAT_ASSERT(c != NULL);
 		t = (unsigned char)(c - cb64);
@@ -143,14 +143,14 @@ int pppoat_base64_enc_new(const void *buf,
 			  size_t      len,
 			  char      **result)
 {
-	size_t rlen = pppoat_base64_enc_len(buf, len) + 1;
+	size_t rlen = pppoat_base64_enc_len(buf, len);
 	int    rc;
 
-	*result = pppoat_alloc(rlen);
+	*result = pppoat_alloc(rlen + 1);
 	rc = *result == NULL ? -ENOMEM : 0;
 	if (rc == 0) {
 		pppoat_base64_enc(buf, len, *result, rlen);
-		*result[rlen - 1] = '\0';
+		(*result)[rlen] = '\0';
 	}
 	return rc;
 }
