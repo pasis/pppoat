@@ -29,10 +29,10 @@ void pppoat_base64_enc(const void *buf,
 		       size_t      len,
 		       char       *result,
 		       size_t      result_len);
-void pppoat_base64_dec(const char *base64,
-		       size_t      len,
-		       void       *result,
-		       size_t      result_len);
+int pppoat_base64_dec(const char *base64,
+		      size_t      len,
+		      void       *result,
+		      size_t      result_len);
 int pppoat_base64_enc_new(const void *buf,
 			  size_t      len,
 			  char      **result);

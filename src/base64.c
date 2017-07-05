@@ -84,42 +84,49 @@ size_t pppoat_base64_dec_len(const char *base64, size_t len)
 	return data_len;
 }
 
-void pppoat_base64_dec(const char *base64,
-		       size_t      len,
-		       void       *result,
-		       size_t      result_len)
+int pppoat_base64_dec(const char *base64,
+		      size_t      len,
+		      void       *result,
+		      size_t      result_len)
 {
-	unsigned char *p   = result;
-	const char    *buf = base64;
+	unsigned char *p = result;
 	unsigned char  t;
+	size_t         rlen;
+	size_t         i;
+	size_t         j;
 	char          *c;
-	int            i;
 
 	PPPOAT_ASSERT(len % 4 == 0);
 	PPPOAT_ASSERT(result_len == pppoat_base64_dec_len(base64, len));
 
-	for (i = 0; i < len; i++) {
-		c = strchr(cb64, (int) *buf++);
-		PPPOAT_ASSERT(c != NULL);
+	rlen = pppoat_base64_dec_len(base64, len);
+	for (i = 0, j = 0; j < rlen; i++) {
+		PPPOAT_ASSERT(i < len);
+		c = strchr(cb64, (int)base64[i]);
+		if (c == NULL)
+			return -EINVAL;
 		t = (unsigned char)(c - cb64);
 		PPPOAT_ASSERT((t & 0xc0) == 0);
 		switch (i % 4) {
 		case 0:
-			*p = t << 2;
+			p[j] = t << 2;
 			break;
 		case 1:
-			*p++ |= t >> 4;
-			*p    = t << 4;
+			p[j++] |= t >> 4;
+			if (j < rlen)
+				p[j] = t << 4;
 			break;
 		case 2:
-			*p++ |= t >> 2;
-			*p    = t << 6;
+			p[j++] |= t >> 2;
+			if (j < rlen)
+				p[j] = t << 6;
 			break;
 		case 3:
-			*p++ |= t;
+			p[j++] |= t;
 			break;
 		}
 	}
+	return 0;
 }
 
 bool pppoat_base64_is_valid(const char *base64, size_t len)
@@ -169,7 +176,8 @@ int pppoat_base64_dec_new(const char     *base64,
 		rc = *result == NULL ? -ENOMEM : 0;
 	}
 	if (rc == 0) {
-		pppoat_base64_dec(base64, len, *result, rlen);
+		rc = pppoat_base64_dec(base64, len, *result, rlen);
+		PPPOAT_ASSERT(rc == 0);
 		*result_len = rlen;
 	}
 	return rc;
