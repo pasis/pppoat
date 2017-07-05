@@ -35,6 +35,9 @@
 #define PPPOAT_XMPP_TIMEOUT  1
 #define PPPOAT_XMPP_BUF_SIZE 4096
 
+#define XMPP_NS_XEP_0091 "jabber:x:delay"
+#define XMPP_NS_XEP_0203 "urn:xmpp:delay"
+
 struct pppoat_xmpp_ctx {
 	pppoat_node_type_t  xc_type;
 	xmpp_log_t          xc_log;
@@ -167,6 +170,7 @@ static int message_handler(xmpp_conn_t * const   conn,
 			   void * const          userdata)
 {
 	struct pppoat_xmpp_ctx *ctx = userdata;
+	xmpp_stanza_t          *delay;
 	unsigned char          *raw;
 	const char             *from;
 	char                   *b64;
@@ -175,6 +179,14 @@ static int message_handler(xmpp_conn_t * const   conn,
 	size_t                  raw_len;
 	int                     rc;
 
+	/* Ignore delayed messages */
+	delay = xmpp_stanza_get_child_by_ns(stanza, XMPP_NS_XEP_0091);
+	if (delay != NULL)
+		return 1;
+	delay = xmpp_stanza_get_child_by_ns(stanza, XMPP_NS_XEP_0203);
+	if (delay != NULL)
+		return 1;
+
 	from = xmpp_stanza_get_from(stanza);
 	PPPOAT_ASSERT(from != NULL);
 	if (!ctx->xc_to_trusted && ctx->xc_to != NULL) {
@@ -182,7 +194,7 @@ static int message_handler(xmpp_conn_t * const   conn,
 		if (strcmp(ctx->xc_to, bare) == 0) {
 			pppoat_free(ctx->xc_to);
 			ctx->xc_to = NULL;
-			/* Next if statement will be true */
+			/* Next "if" statement will be true */
 		}
 		xmpp_free(ctx->xc_ctx, bare);
 	}
