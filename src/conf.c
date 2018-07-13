@@ -19,6 +19,7 @@
 
 #include <string.h>	/* strcmp */
 #include <unistd.h>	/* getopt */
+#include <stdio.h>	/* fopen, fgets, fclose */
 #ifdef HAVE_GETOPT_LONG
 #include <getopt.h>	/* getopt_long */
 #endif /* HAVE_GETOPT_LONG */
@@ -113,6 +114,32 @@ static void _conf_dump(const struct pppoat_conf *conf)
 							  conf->cfg_vals[i]);
 }
 
+static int process_config_file(struct pppoat_conf *conf, const char* filename)
+{
+	FILE*const fp=fopen(filename, "r");
+	if(!fp)
+	{
+		fprintf(stderr, "Failed to open file '%s'\n", filename);
+		return 1;
+	}
+	char buf[256];
+	while(fgets(buf, sizeof buf, fp))
+	{
+		const size_t key_len = strcspn(buf, "=");
+		const char*const key = buf;
+		char*const val = buf[key_len] == '=' ? &buf[key_len + 1] : "true";
+		buf[key_len] = '\0'; /* split key and value */
+
+		const size_t val_len = strlen(val);
+		if(val_len>0 && val[val_len-1]=='\n')
+			val[val_len-1]='\0';
+
+		pppoat_conf_update(conf, key, val);
+	}
+	fclose(fp);
+	return 0;
+}
+
 int pppoat_conf_args_parse(struct pppoat_conf *conf, int argc, char **argv)
 {
 	size_t  len;
@@ -133,9 +160,11 @@ int pppoat_conf_args_parse(struct pppoat_conf *conf, int argc, char **argv)
 		{ "module", required_argument, NULL, 'm' },
 		{ "server", no_argument,       NULL, 'S' },
 		{ "src",    required_argument, NULL, 's' },
+		{ "config", required_argument, NULL, 'c' },
 		{ NULL, 0, NULL, 0 }
 	};
-	static const char *optstring = "d:hilSs:m:";
+	static const char *optstring = "d:hilSs:m:c:";
+	const char* config_filename = NULL;
 
 	while (1) {
 #ifdef HAVE_GETOPT_LONG
@@ -168,10 +197,15 @@ int pppoat_conf_args_parse(struct pppoat_conf *conf, int argc, char **argv)
 		case 's':
 			pppoat_conf_update(conf, "source", optarg);
 			break;
+		case 'c':
+			config_filename = optarg;
+			break;
 		default:
 			;
 		}
 	}
+	if(config_filename && process_config_file(conf, config_filename))
+		return 1;
 	for (i = optind; i < argc; ++i) {
 		len = strcspn(argv[i], "=");
 		key = pppoat_alloc(len + 1);
