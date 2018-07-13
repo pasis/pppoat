@@ -60,6 +60,8 @@ static void help_print(FILE *f, char *name)
 	fprintf(f, "Options:\n"
 		   "  --dest=<ip> (-d)     Destination IP for the tunnel\n"
 		   "  --help (-h)          Print this help\n"
+		   "  --config (-c)        Path to file with module-specific options\n"
+		   "                       (Each option must be on a dedicated line.)\n"
 		   "  --if=<name> (-i)     Interface module name\n"
 		   "  --list (-l)          Print list of available modules\n"
 		   "  --module=<name> (-m) Transport module name\n"
